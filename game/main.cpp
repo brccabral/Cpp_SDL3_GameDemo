@@ -52,6 +52,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     }
 
     as->idleTex = {IMG_LoadTexture(as->renderer, "data/idle.png"), SDL_DestroyTexture};
+    SDL_SetTextureScaleMode(as->idleTex, SDL_SCALEMODE_NEAREST);
 
     return SDL_APP_CONTINUE;
 }
@@ -75,7 +76,9 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     SDL_SetRenderDrawColor(as->renderer, 0, 0, 0, 255);
     SDL_RenderClear(as->renderer);
 
-    SDL_RenderTexture(as->renderer, as->idleTex, nullptr, nullptr);
+    SDL_FRect src{.x = 0, .y = 0, .w = 32, .h = 32};
+    SDL_FRect dst{.x = 0, .y = 0, .w = 32, .h = 32};
+    SDL_RenderTexture(as->renderer, as->idleTex, &src, &dst);
 
     SDL_RenderPresent(as->renderer);
 
