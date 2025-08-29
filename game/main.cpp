@@ -14,6 +14,9 @@ typedef struct AppState
     int width, height;
     int logW, logH; // logical width/height
     const bool* keys;
+    float playerX = 150;
+    uint64_t prevTime = SDL_GetTicks();
+
     ~AppState() = default;
 } AppState;
 
@@ -90,6 +93,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
             break;
         }
     }
+
     return SDL_APP_CONTINUE;
 }
 
@@ -97,7 +101,22 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 {
     auto* as = (AppState*)appstate;
 
-    float playerX = 150;
+    uint64_t nowTime = SDL_GetTicks();
+    float deltaTime = (float)(nowTime - as->prevTime) / 1000.0f;
+    as->prevTime = nowTime;
+
+    // handle movement
+    float moveAmount = 0;
+    if (as->keys[SDL_SCANCODE_A])
+    {
+        moveAmount += -75.0f;
+    }
+    if (as->keys[SDL_SCANCODE_D])
+    {
+        moveAmount += 75.0f;
+    }
+    as->playerX += moveAmount * deltaTime;
+
     const float spriteSize = 32;
     const float floor = as->logH;
 
@@ -105,7 +124,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     SDL_RenderClear(as->renderer);
 
     SDL_FRect src{.x = 0, .y = 0, .w = spriteSize, .h = spriteSize};
-    SDL_FRect dst{.x = playerX, .y = floor - spriteSize, .w = spriteSize, .h = spriteSize};
+    SDL_FRect dst{.x = as->playerX, .y = floor - spriteSize, .w = spriteSize, .h = spriteSize};
     SDL_RenderTexture(as->renderer, as->idleTex, &src, &dst);
 
     SDL_RenderPresent(as->renderer);
