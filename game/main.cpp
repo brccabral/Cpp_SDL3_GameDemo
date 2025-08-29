@@ -13,6 +13,7 @@ typedef struct AppState
     AutoRelease<SDL_Texture*> idleTex;
     int width, height;
     int logW, logH; // logical width/height
+    const bool* keys;
     ~AppState() = default;
 } AppState;
 
@@ -63,6 +64,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     as->idleTex = {IMG_LoadTexture(as->renderer, "data/idle.png"), SDL_DestroyTexture};
     SDL_SetTextureScaleMode(as->idleTex, SDL_SCALEMODE_NEAREST);
 
+    as->keys = SDL_GetKeyboardState(nullptr);
+
     return SDL_APP_CONTINUE;
 }
 
@@ -94,11 +97,15 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 {
     auto* as = (AppState*)appstate;
 
+    float playerX = 150;
+    const float spriteSize = 32;
+    const float floor = as->logH;
+
     SDL_SetRenderDrawColor(as->renderer, 20, 10, 30, 255);
     SDL_RenderClear(as->renderer);
 
-    SDL_FRect src{.x = 0, .y = 0, .w = 32, .h = 32};
-    SDL_FRect dst{.x = 0, .y = 0, .w = 32, .h = 32};
+    SDL_FRect src{.x = 0, .y = 0, .w = spriteSize, .h = spriteSize};
+    SDL_FRect dst{.x = playerX, .y = floor - spriteSize, .w = spriteSize, .h = spriteSize};
     SDL_RenderTexture(as->renderer, as->idleTex, &src, &dst);
 
     SDL_RenderPresent(as->renderer);
