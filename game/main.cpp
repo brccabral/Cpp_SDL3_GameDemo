@@ -1,6 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3_image/SDL_image.h>
 #include <autorelease/AutoRelease.hpp>
 
 
@@ -9,6 +10,7 @@ typedef struct AppState
     AutoRelease<int> sdl_init;
     AutoRelease<SDL_Window*> window;
     AutoRelease<SDL_Renderer*> renderer;
+    AutoRelease<SDL_Texture*> idleTex;
     ~AppState() = default;
 } AppState;
 
@@ -49,6 +51,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
+    as->idleTex = {IMG_LoadTexture(as->renderer, "data/idle.png"), SDL_DestroyTexture};
+
     return SDL_APP_CONTINUE;
 }
 
@@ -70,6 +74,9 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
     SDL_SetRenderDrawColor(as->renderer, 0, 0, 0, 255);
     SDL_RenderClear(as->renderer);
+
+    SDL_RenderTexture(as->renderer, as->idleTex, nullptr, nullptr);
+
     SDL_RenderPresent(as->renderer);
 
     return SDL_APP_CONTINUE;
