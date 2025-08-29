@@ -38,7 +38,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
     constexpr int width = 800;
     constexpr int height = 600;
-    as->window = {SDL_CreateWindow("SDL3 Game Demo", width, height, 0), SDL_DestroyWindow};
+    as->window = {SDL_CreateWindow("SDL3 Game Demo", width, height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow};
     if (!as->window)
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
@@ -50,6 +50,13 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), as->window);
         return SDL_APP_FAILURE;
     }
+
+    // configure presentation
+    // SDL will scale the final render buffer for us
+    // SDL_LOGICAL_PRESENTATION_LETTERBOX keeps aspect ratio logW/logH, adding black banners as needed in SDL window
+    int logW = 640;
+    int logH = 320;
+    SDL_SetRenderLogicalPresentation(as->renderer, logW, logH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     as->idleTex = {IMG_LoadTexture(as->renderer, "data/idle.png"), SDL_DestroyTexture};
     SDL_SetTextureScaleMode(as->idleTex, SDL_SCALEMODE_NEAREST);
@@ -73,7 +80,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 {
     auto* as = (AppState*)appstate;
 
-    SDL_SetRenderDrawColor(as->renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(as->renderer, 20, 10, 30, 255);
     SDL_RenderClear(as->renderer);
 
     SDL_FRect src{.x = 0, .y = 0, .w = 32, .h = 32};
