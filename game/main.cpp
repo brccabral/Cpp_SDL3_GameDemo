@@ -11,6 +11,7 @@ typedef struct AppState
     AutoRelease<SDL_Window*> window;
     AutoRelease<SDL_Renderer*> renderer;
     AutoRelease<SDL_Texture*> idleTex;
+    int width, height;
     ~AppState() = default;
 } AppState;
 
@@ -36,9 +37,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
-    constexpr int width = 800;
-    constexpr int height = 600;
-    as->window = {SDL_CreateWindow("SDL3 Game Demo", width, height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow};
+    as->width = 800;
+    as->height = 600;
+    as->window = {SDL_CreateWindow("SDL3 Game Demo", as->width, as->height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow};
     if (!as->window)
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
@@ -66,12 +67,24 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
+    auto* as = (AppState*)appstate;
+
     switch (event->type)
     {
     case SDL_EVENT_QUIT:
-        return SDL_APP_SUCCESS;
+        {
+            return SDL_APP_SUCCESS;
+        }
+    case SDL_EVENT_WINDOW_RESIZED:
+        {
+            as->width = event->window.data1;
+            as->height = event->window.data2;
+            break;
+        }
     default:
-        break;
+        {
+            break;
+        }
     }
     return SDL_APP_CONTINUE;
 }
