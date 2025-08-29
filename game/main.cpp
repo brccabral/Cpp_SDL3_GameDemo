@@ -12,6 +12,7 @@ typedef struct AppState
     AutoRelease<SDL_Renderer*> renderer;
     AutoRelease<SDL_Texture*> idleTex;
     int width, height;
+    int logW, logH; // logical width/height
     ~AppState() = default;
 } AppState;
 
@@ -37,8 +38,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
-    as->width = 800;
-    as->height = 600;
+    as->width = 1600;
+    as->height = 900;
     as->window = {SDL_CreateWindow("SDL3 Game Demo", as->width, as->height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow};
     if (!as->window)
     {
@@ -55,9 +56,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     // configure presentation
     // SDL will scale the final render buffer for us
     // SDL_LOGICAL_PRESENTATION_LETTERBOX keeps aspect ratio logW/logH, adding black banners as needed in SDL window
-    int logW = 640;
-    int logH = 320;
-    SDL_SetRenderLogicalPresentation(as->renderer, logW, logH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    as->logW = 640;
+    as->logH = 320;
+    SDL_SetRenderLogicalPresentation(as->renderer, as->logW, as->logH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     as->idleTex = {IMG_LoadTexture(as->renderer, "data/idle.png"), SDL_DestroyTexture};
     SDL_SetTextureScaleMode(as->idleTex, SDL_SCALEMODE_NEAREST);
