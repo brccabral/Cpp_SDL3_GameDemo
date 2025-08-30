@@ -25,6 +25,9 @@ typedef struct SDLState
 
 const size_t LAYER_IDX_LEVEL = 0;
 const size_t LAYER_IDX_CHARACTERS = 1;
+const int MAP_ROWS = 5;
+const int MAP_COLS = 50;
+const int TILE_SIZE = 32;
 
 struct GameState
 {
@@ -76,6 +79,7 @@ typedef struct AppState
 
 void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float deltaTime);
 void update(const SDLState* state, GameState* gs, Resources* res, GameObject& obj, float deltaTime);
+void createTiles(const SDLState* state, GameState* gs, Resources* res);
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -129,16 +133,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     ss->keys = SDL_GetKeyboardState(nullptr);
 
     res->load(ss);
-
-    GameObject player;
-    player.type = ObjectType::player;
-    player.data.player = PlayerData();
-    player.texture = res->texIdle;
-    player.animations = res->playerAnims;
-    player.currentAnimation = res->ANIM_PLAYER_IDLE;
-    player.acceleration = glm::vec2(300.f, 0.f);
-    player.maxSpeedX = 100.f;
-    gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
+    createTiles(ss, gs, res);
 
     return SDL_APP_CONTINUE;
 }
@@ -293,5 +288,46 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         obj.velocity += currentDirection * obj.acceleration * deltaTime;
         obj.velocity.x = glm::clamp(obj.velocity.x, -obj.maxSpeedX, obj.maxSpeedX);
         obj.position += obj.velocity * deltaTime;
+    }
+}
+
+void createTiles(const SDLState* state, GameState* gs, Resources* res)
+{
+    /*
+     * 1 - Ground
+     * 2 - Panel
+     * 3 - Enemy
+     * 4 - Player
+     * 5 - Grass
+     * 6 - Brick
+     */
+    short map[MAP_ROWS][MAP_COLS]{};
+    map[2][0] = 4;
+
+    for (int r = 0; r < MAP_ROWS; r++)
+    {
+        for (int c = 0; c < MAP_COLS; c++)
+        {
+            switch (map[r][c])
+            {
+            case 4: // player
+                {
+                    GameObject player;
+                    player.type = ObjectType::player;
+                    player.data.player = PlayerData();
+                    player.position = glm::vec2(c * TILE_SIZE, state->logH - (MAP_ROWS - r) * TILE_SIZE);
+                    player.acceleration = glm::vec2(300.f, 0.f);
+                    player.maxSpeedX = 100.f;
+                    player.animations = res->playerAnims;
+                    player.currentAnimation = res->ANIM_PLAYER_IDLE;
+                    player.texture = res->texIdle;
+                    gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
+                }
+            default:
+                {
+                    break;
+                }
+            }
+        }
     }
 }
