@@ -37,10 +37,12 @@ struct GameState
 struct Resources
 {
     const int ANIM_PLAYER_IDLE = 0;
+    const int ANIM_PLAYER_RUNNING = 0;
     std::vector<Animation> playerAnims;
 
     std::vector<AutoRelease<SDL_Texture*>> textures;
     SDL_Texture* texIdle;
+    SDL_Texture* texRun;
 
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
@@ -54,8 +56,10 @@ struct Resources
     {
         playerAnims.resize(5);
         playerAnims[ANIM_PLAYER_IDLE] = Animation{8, 1.6f};
+        playerAnims[ANIM_PLAYER_RUNNING] = Animation{4, 0.5f};
 
         texIdle = loadTexture(state, "data/idle.png");
+        texRun = loadTexture(state, "data/run.png");
     }
 
     ~Resources() = default;
@@ -249,6 +253,8 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 if (currentDirection)
                 {
                     obj.data.player.state = PlayerState::running;
+                    obj.texture = res->texRun;
+                    obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
                 }
                 else
                 {
@@ -274,6 +280,8 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 if (!currentDirection)
                 {
                     obj.data.player.state = PlayerState::idle;
+                    obj.texture = res->texIdle;
+                    obj.currentAnimation = res->ANIM_PLAYER_IDLE;
                 }
             }
         default:
