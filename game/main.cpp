@@ -46,6 +46,10 @@ struct Resources
     std::vector<AutoRelease<SDL_Texture*>> textures;
     SDL_Texture* texIdle;
     SDL_Texture* texRun;
+    SDL_Texture* texBrick;
+    SDL_Texture* texGrass;
+    SDL_Texture* texGround;
+    SDL_Texture* texPanel;
 
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
@@ -63,6 +67,10 @@ struct Resources
 
         texIdle = loadTexture(state, "data/idle.png");
         texRun = loadTexture(state, "data/run.png");
+        texBrick = loadTexture(state, "data/tiles/brick.png");
+        texGrass = loadTexture(state, "data/tiles/grass.png");
+        texGround = loadTexture(state, "data/tiles/ground.png");
+        texPanel = loadTexture(state, "data/tiles/panel.png");
     }
 
     ~Resources() = default;
@@ -301,8 +309,27 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
      * 5 - Grass
      * 6 - Brick
      */
-    short map[MAP_ROWS][MAP_COLS]{};
-    map[2][0] = 4;
+    short map[MAP_ROWS][MAP_COLS] = {
+        4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 2, 0, 0, 2, 2, 2, 2, 0, 2, 2, 2, 0, 0, 3, 2, 2, 2, 2, 0, 0, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 2, 0, 2, 2, 0, 0, 0, 3, 0, 0, 3, 0, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0, 3, 0, 0, 3, 0, 2, 3, 3, 3, 0, 2, 0,
+        3, 3, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 3,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    };
+
+    const auto createObject = [state](const int r, const int c, SDL_Texture* tex, const ObjectType type)
+    {
+        GameObject o;
+        o.type = type;
+        o.position = glm::vec2(c * TILE_SIZE, state->logH - (MAP_ROWS - r) * TILE_SIZE);
+        o.texture = tex;
+        return o;
+    };
 
     for (int r = 0; r < MAP_ROWS; r++)
     {
@@ -310,18 +337,39 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
         {
             switch (map[r][c])
             {
+            case 1: // ground
+                {
+                    GameObject ground = createObject(r, c, res->texGround, ObjectType::level);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(ground);
+                    break;
+                }
+            case 2: // panel
+                {
+                    GameObject panel = createObject(r, c, res->texPanel, ObjectType::level);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(panel);
+                    break;
+                }
             case 4: // player
                 {
-                    GameObject player;
-                    player.type = ObjectType::player;
+                    GameObject player = createObject(r, c, res->texIdle, ObjectType::player);
                     player.data.player = PlayerData();
-                    player.position = glm::vec2(c * TILE_SIZE, state->logH - (MAP_ROWS - r) * TILE_SIZE);
                     player.acceleration = glm::vec2(300.f, 0.f);
                     player.maxSpeedX = 100.f;
                     player.animations = res->playerAnims;
                     player.currentAnimation = res->ANIM_PLAYER_IDLE;
-                    player.texture = res->texIdle;
                     gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
+                }
+            case 5: // grass
+                {
+                    GameObject grass = createObject(r, c, res->texGrass, ObjectType::level);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(grass);
+                    break;
+                }
+            case 6: // brick
+                {
+                    GameObject brick = createObject(r, c, res->texBrick, ObjectType::level);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(brick);
+                    break;
                 }
             default:
                 {
