@@ -265,6 +265,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         }
 
         obj.velocity += currentDirection * obj.acceleration * deltaTime;
+        obj.velocity.x = glm::clamp(obj.velocity.x, -obj.maxSpeedX, obj.maxSpeedX);
         obj.position += obj.velocity * deltaTime;
     }
 }
