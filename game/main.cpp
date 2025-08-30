@@ -233,6 +233,12 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float del
 
 void update(const SDLState* state, GameState* gs, Resources* res, GameObject& obj, float deltaTime)
 {
+    // apply some gravity
+    if (obj.dynamic)
+    {
+        obj.velocity += glm::vec2(0, 500) * deltaTime;
+    }
+
     if (obj.type == ObjectType::player)
     {
         float currentDirection = 0;
@@ -295,8 +301,8 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
 
         obj.velocity += currentDirection * obj.acceleration * deltaTime;
         obj.velocity.x = glm::clamp(obj.velocity.x, -obj.maxSpeedX, obj.maxSpeedX);
-        obj.position += obj.velocity * deltaTime;
     }
+    obj.position += obj.velocity * deltaTime;
 }
 
 void createTiles(const SDLState* state, GameState* gs, Resources* res)
@@ -357,6 +363,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                     player.maxSpeedX = 100.f;
                     player.animations = res->playerAnims;
                     player.currentAnimation = res->ANIM_PLAYER_IDLE;
+                    player.dynamic = true;
                     gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
                 }
             case 5: // grass

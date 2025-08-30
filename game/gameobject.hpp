@@ -46,6 +46,7 @@ struct GameObject
     std::vector<Animation> animations{};
     int currentAnimation = -1;
     SDL_Texture* texture = nullptr;
+    bool dynamic{};
 
     GameObject() = default;
 };
