@@ -1,6 +1,6 @@
 add_executable(sdl3-demo)
 target_sources(sdl3-demo
-               PRIVATE main.cpp
+               PRIVATE main.cpp timer.cpp animation.cpp
 )
 target_link_libraries(sdl3-demo PRIVATE autorelease::autorelease SDL3::SDL3 SDL3_image::SDL3_image)
 
