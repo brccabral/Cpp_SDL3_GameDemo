@@ -1,4 +1,5 @@
 #include <array>
+#include <print>
 #include <string>
 #include <vector>
 #define SDL_MAIN_USE_CALLBACKS 1
@@ -9,6 +10,16 @@
 
 #include "gameobject.hpp"
 
+template <>
+struct std::formatter<SDL_FRect>
+{
+    constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+
+    auto format(const SDL_FRect& r, std::format_context& ctx) const
+    {
+        return std::format_to(ctx.out(), "[x: {} y: {} w: {} h: {}]", r.x, r.y, r.w, r.h);
+    }
+};
 
 typedef struct SDLState
 {

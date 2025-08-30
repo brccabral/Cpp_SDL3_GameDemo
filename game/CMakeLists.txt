@@ -1,4 +1,5 @@
 add_executable(sdl3-demo)
+target_compile_features(sdl3-demo PRIVATE cxx_std_23)
 target_sources(sdl3-demo
                PRIVATE main.cpp timer.cpp animation.cpp gameobject.cpp
 )
