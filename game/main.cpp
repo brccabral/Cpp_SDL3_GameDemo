@@ -15,6 +15,7 @@ typedef struct AppState
     int logW, logH; // logical width/height
     const bool* keys;
     float playerX = 150;
+    bool flipHorizontal = false;
     uint64_t prevTime = SDL_GetTicks();
 
     ~AppState() = default;
@@ -110,10 +111,12 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     if (as->keys[SDL_SCANCODE_A])
     {
         moveAmount += -75.0f;
+        as->flipHorizontal = true;
     }
     if (as->keys[SDL_SCANCODE_D])
     {
         moveAmount += 75.0f;
+        as->flipHorizontal = false;
     }
     as->playerX += moveAmount * deltaTime;
 
@@ -125,7 +128,8 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
     SDL_FRect src{.x = 0, .y = 0, .w = spriteSize, .h = spriteSize};
     SDL_FRect dst{.x = as->playerX, .y = floor - spriteSize, .w = spriteSize, .h = spriteSize};
-    SDL_RenderTexture(as->renderer, as->idleTex, &src, &dst);
+    SDL_RenderTextureRotated(as->renderer, as->idleTex, &src, &dst, 0, nullptr,
+                             as->flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
 
     SDL_RenderPresent(as->renderer);
 
