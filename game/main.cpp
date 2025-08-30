@@ -346,13 +346,13 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
             case 1: // ground
                 {
                     GameObject ground = createObject(r, c, res->texGround, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(ground);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(ground));
                     break;
                 }
             case 2: // panel
                 {
                     GameObject panel = createObject(r, c, res->texPanel, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(panel);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(panel));
                     break;
                 }
             case 4: // player
@@ -369,13 +369,13 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
             case 5: // grass
                 {
                     GameObject grass = createObject(r, c, res->texGrass, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(grass);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(grass));
                     break;
                 }
             case 6: // brick
                 {
                     GameObject brick = createObject(r, c, res->texBrick, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(brick);
+                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(brick));
                     break;
                 }
             default:
