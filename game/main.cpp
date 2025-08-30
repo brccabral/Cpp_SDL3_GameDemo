@@ -1,3 +1,4 @@
+#include <array>
 #include <string>
 #include <vector>
 #define SDL_MAIN_USE_CALLBACKS 1
@@ -6,10 +7,10 @@
 #include <SDL3_image/SDL_image.h>
 #include <autorelease/AutoRelease.hpp>
 
-#include "animation.hpp"
+#include "gameobject.hpp"
 
 
-typedef struct GameState
+typedef struct SDLState
 {
     AutoRelease<int> sdl_init;
     AutoRelease<SDL_Window*> window;
@@ -21,8 +22,19 @@ typedef struct GameState
     bool flipHorizontal = false;
     uint64_t prevTime = SDL_GetTicks();
 
-    ~GameState() = default;
-} GameState;
+    ~SDLState() = default;
+} SDLState;
+
+const size_t LAYER_IDX_LEVEL = 0;
+const size_t LAYER_IDX_CHARACTERS = 1;
+
+struct GameState
+{
+    std::array<std::vector<GameObject>, 2> layers;
+    int playerIndex = 0;
+
+    GameState() = default;
+};
 
 struct Resources
 {
@@ -32,7 +44,7 @@ struct Resources
     std::vector<AutoRelease<SDL_Texture*>> textures;
     SDL_Texture* texIdle;
 
-    SDL_Texture* loadTexture(GameState* state, const std::string& filepath)
+    SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
         AutoRelease<SDL_Texture*> tex = {IMG_LoadTexture(state->renderer, filepath.c_str()), SDL_DestroyTexture};
         SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
@@ -40,7 +52,7 @@ struct Resources
         return textures.back();
     }
 
-    void load(GameState* state)
+    void load(SDLState* state)
     {
         playerAnims.resize(5);
         playerAnims[ANIM_PLAYER_IDLE] = Animation{8, 1.6f};
@@ -51,13 +63,13 @@ struct Resources
     ~Resources() = default;
 };
 
-typedef struct SDLState
+typedef struct AppState
 {
-    GameState gameState;
+    SDLState sdlState;
     Resources resources;
 
-    ~SDLState() = default;
-} SDLState;
+    ~AppState() = default;
+} AppState;
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -66,54 +78,54 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
-    auto* ss = (SDLState*)SDL_calloc(1, sizeof(SDLState));
-    if (!ss)
+    auto* as = (AppState*)SDL_calloc(1, sizeof(AppState));
+    if (!as)
     {
         return SDL_APP_FAILURE;
     }
 
-    *appstate = ss;
-    GameState* gs = &ss->gameState;
+    *appstate = as;
+    SDLState* ss = &as->sdlState;
 
-    gs->sdl_init = {SDL_Init(SDL_INIT_VIDEO), [](const int&) { SDL_Quit(); }};
-    if (!gs->sdl_init)
+    ss->sdl_init = {SDL_Init(SDL_INIT_VIDEO), [](const int&) { SDL_Quit(); }};
+    if (!ss->sdl_init)
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
         return SDL_APP_FAILURE;
     }
 
-    gs->width = 1600;
-    gs->height = 900;
-    gs->window = {SDL_CreateWindow("SDL3 Game Demo", gs->width, gs->height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow};
-    if (!gs->window)
+    ss->width = 1600;
+    ss->height = 900;
+    ss->window = {SDL_CreateWindow("SDL3 Game Demo", ss->width, ss->height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow};
+    if (!ss->window)
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
         return SDL_APP_FAILURE;
     }
-    gs->renderer = {SDL_CreateRenderer(gs->window, NULL), SDL_DestroyRenderer};
-    if (!gs->renderer)
+    ss->renderer = {SDL_CreateRenderer(ss->window, NULL), SDL_DestroyRenderer};
+    if (!ss->renderer)
     {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), gs->window);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), ss->window);
         return SDL_APP_FAILURE;
     }
 
     // configure presentation
     // SDL will scale the final render buffer for us
     // SDL_LOGICAL_PRESENTATION_LETTERBOX keeps aspect ratio logW/logH, adding black banners as needed in SDL window
-    gs->logW = 640;
-    gs->logH = 320;
-    SDL_SetRenderLogicalPresentation(gs->renderer, gs->logW, gs->logH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    ss->logW = 640;
+    ss->logH = 320;
+    SDL_SetRenderLogicalPresentation(ss->renderer, ss->logW, ss->logH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
-    gs->keys = SDL_GetKeyboardState(nullptr);
+    ss->keys = SDL_GetKeyboardState(nullptr);
 
-    ss->resources.load(gs);
+    as->resources.load(ss);
 
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
-    auto* gs = &((SDLState*)appstate)->gameState;
+    auto* ss = &((AppState*)appstate)->sdlState;
 
     switch (event->type)
     {
@@ -123,8 +135,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
         }
     case SDL_EVENT_WINDOW_RESIZED:
         {
-            gs->width = event->window.data1;
-            gs->height = event->window.data2;
+            ss->width = event->window.data1;
+            ss->height = event->window.data2;
             break;
         }
     default:
@@ -138,46 +150,46 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-    auto* gs = &((SDLState*)appstate)->gameState;
-    auto* res = &((SDLState*)appstate)->resources;
+    auto* ss = &((AppState*)appstate)->sdlState;
+    auto* res = &((AppState*)appstate)->resources;
 
     uint64_t nowTime = SDL_GetTicks();
-    float deltaTime = (float)(nowTime - gs->prevTime) / 1000.0f;
-    gs->prevTime = nowTime;
+    float deltaTime = (float)(nowTime - ss->prevTime) / 1000.0f;
+    ss->prevTime = nowTime;
 
     // handle movement
     float moveAmount = 0;
-    if (gs->keys[SDL_SCANCODE_A])
+    if (ss->keys[SDL_SCANCODE_A])
     {
         moveAmount += -75.0f;
-        gs->flipHorizontal = true;
+        ss->flipHorizontal = true;
     }
-    if (gs->keys[SDL_SCANCODE_D])
+    if (ss->keys[SDL_SCANCODE_D])
     {
         moveAmount += 75.0f;
-        gs->flipHorizontal = false;
+        ss->flipHorizontal = false;
     }
-    gs->playerX += moveAmount * deltaTime;
+    ss->playerX += moveAmount * deltaTime;
 
     const float spriteSize = 32;
-    const float floor = gs->logH;
+    const float floor = ss->logH;
 
-    SDL_SetRenderDrawColor(gs->renderer, 20, 10, 30, 255);
-    SDL_RenderClear(gs->renderer);
+    SDL_SetRenderDrawColor(ss->renderer, 20, 10, 30, 255);
+    SDL_RenderClear(ss->renderer);
 
     SDL_FRect src{.x = 0, .y = 0, .w = spriteSize, .h = spriteSize};
-    SDL_FRect dst{.x = gs->playerX, .y = floor - spriteSize, .w = spriteSize, .h = spriteSize};
-    SDL_RenderTextureRotated(gs->renderer, res->texIdle, &src, &dst, 0, nullptr,
-                             gs->flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
+    SDL_FRect dst{.x = ss->playerX, .y = floor - spriteSize, .w = spriteSize, .h = spriteSize};
+    SDL_RenderTextureRotated(ss->renderer, res->texIdle, &src, &dst, 0, nullptr,
+                             ss->flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
 
-    SDL_RenderPresent(gs->renderer);
+    SDL_RenderPresent(ss->renderer);
 
     return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
-    auto* ss = (SDLState*)appstate;
-    ss->~SDLState();
-    SDL_free(ss);
+    auto* as = (AppState*)appstate;
+    as->~AppState();
+    SDL_free(as);
 }
