@@ -365,6 +365,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                     player.currentAnimation = res->ANIM_PLAYER_IDLE;
                     player.dynamic = true;
                     gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
+                    break;
                 }
             case 5: // grass
                 {
