@@ -250,7 +250,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         {
             currentDirection += 1;
         }
-        if (currentDirection)
+        if (currentDirection != 0)
         {
             obj.direction = currentDirection;
         }
@@ -259,7 +259,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         {
         case PlayerState::idle:
             {
-                if (currentDirection)
+                if (currentDirection != 0)
                 {
                     obj.data.player.state = PlayerState::running;
                     obj.texture = res->texRun;
@@ -268,7 +268,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 else
                 {
                     // deacceleration
-                    if (obj.velocity.x)
+                    if (obj.velocity.x != 0)
                     {
                         const float factor = obj.velocity.x > 0 ? -1.5f : 1.5f;
                         float amount = factor * obj.acceleration.x * deltaTime;
@@ -286,7 +286,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             }
         case PlayerState::running:
             {
-                if (!currentDirection)
+                if (currentDirection == 0)
                 {
                     obj.data.player.state = PlayerState::idle;
                     obj.texture = res->texIdle;
