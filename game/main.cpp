@@ -322,8 +322,6 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 if (currentDirection != 0)
                 {
                     obj.data.player.state = PlayerState::running;
-                    obj.texture = res->texRun;
-                    obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
                 }
                 else
                 {
@@ -342,6 +340,8 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                         }
                     }
                 }
+                obj.texture = res->texIdle;
+                obj.currentAnimation = res->ANIM_PLAYER_IDLE;
                 break;
             }
         case PlayerState::running:
@@ -349,9 +349,16 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 if (currentDirection == 0)
                 {
                     obj.data.player.state = PlayerState::idle;
-                    obj.texture = res->texIdle;
-                    obj.currentAnimation = res->ANIM_PLAYER_IDLE;
                 }
+                obj.texture = res->texRun;
+                obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
+                break;
+            }
+        case PlayerState::jumping:
+            {
+                obj.texture = res->texRun;
+                obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
+                break;
             }
         default:
             {
@@ -414,7 +421,8 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         obj.grounded = foundGround;
         if (foundGround && obj.type == ObjectType::player)
         {
-            obj.data.player.state = PlayerState::running; // if player stopped running, the next frame will change to idle
+            obj.data.player.state = PlayerState::running;
+            // if player stopped running, the next frame will change to idle
         }
     }
 }
