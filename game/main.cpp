@@ -101,9 +101,10 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
 void createTiles(const SDLState* state, GameState* gs, Resources* res);
 void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameObject& objA,
                     GameObject& objB,
-                    float deltaTime);
+                    float deltaTime, bool isHorizontal);
 void collisionResponse(const SDLState* state, GameState* gs, Resources* res, const SDL_FRect& rectA,
-                       const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime);
+                       const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime,
+                       bool isHorizontal);
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -331,7 +332,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             {
                 continue;
             }
-            checkCollision(state, gs, res, obj, objB, deltaTime);
+            checkCollision(state, gs, res, obj, objB, deltaTime, true);
         }
     }
     // vertical
@@ -344,13 +345,14 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             {
                 continue;
             }
-            checkCollision(state, gs, res, obj, objB, deltaTime);
+            checkCollision(state, gs, res, obj, objB, deltaTime, false);
         }
     }
 }
 
 void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FRect& rectA,
-                       const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime)
+                       const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime,
+                       bool isHorizontal)
 {
     if (a.type == ObjectType::player)
     {
@@ -358,11 +360,11 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
         {
         case ObjectType::level:
             {
-                if (rectC.w < rectC.h) // horizontal collision
+                if (isHorizontal) // horizontal collision
                 {
                     if (a.velocity.x > 0) // going right
                     {
-                        a.position.x = rectB.x - rectA.w - a.collider.x;
+                        a.position.x = rectB.x - a.collider.w - a.collider.x;
                         a.velocity.x = 0;
                     }
                     else if (a.velocity.x < 0)
@@ -371,11 +373,11 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                         a.velocity.x = 0;
                     }
                 }
-                else if (rectC.w > rectC.h) // vertical
+                else if (!isHorizontal) // vertical
                 {
                     if (a.velocity.y > 0) // going down
                     {
-                        a.position.y = rectB.y - rectA.h - a.collider.y;
+                        a.position.y = rectB.y - a.collider.h - a.collider.y;
                         a.velocity.y = 0;
                     }
                     else if (a.velocity.y < 0)
@@ -391,22 +393,15 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
 }
 
 void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameObject& objA,
-                    GameObject& objB,
-                    float deltaTime)
+                    GameObject& objB, float deltaTime, bool isHorizontal)
 {
-    SDL_FRect rectA{
-        .x = objA.position.x + objA.collider.x, .y = objA.position.y + objA.collider.y, .w = objA.collider.w,
-        .h = objA.collider.h
-    };
-    SDL_FRect rectB{
-        .x = objB.position.x + objB.collider.x, .y = objB.position.y + objB.collider.y, .w = objB.collider.w,
-        .h = objB.collider.h
-    };
+    SDL_FRect rectA = objA.GetCollider();
+    SDL_FRect rectB = objB.GetCollider();
     SDL_FRect rectC{}; // collision result
 
-    if (SDL_GetRectIntersectionFloat(&rectA, &rectB, &rectC) && (rectC.w > 0 || rectC.h > 0))
+    if (SDL_GetRectIntersectionFloat(&rectA, &rectB, &rectC) && (rectC.w > 0.00001f && rectC.h > 0.00001f))
     {
-        collisionResponse(state, gs, res, rectA, rectB, rectC, objA, objB, deltaTime);
+        collisionResponse(state, gs, res, rectA, rectB, rectC, objA, objB, deltaTime, isHorizontal);
     }
 }
 

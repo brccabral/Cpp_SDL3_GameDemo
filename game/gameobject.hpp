@@ -50,4 +50,5 @@ struct GameObject
     SDL_FRect collider{};
 
     GameObject() = default;
+    SDL_FRect GetCollider() const;
 };
