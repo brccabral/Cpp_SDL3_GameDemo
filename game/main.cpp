@@ -21,6 +21,17 @@ struct std::formatter<SDL_FRect>
     }
 };
 
+template <>
+struct std::formatter<glm::vec2>
+{
+    constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+
+    auto format(const glm::vec2& v, std::format_context& ctx) const
+    {
+        return std::format_to(ctx.out(), "[x: {} y: {}]", v.x, v.y);
+    }
+};
+
 typedef struct SDLState
 {
     AutoRelease<int> sdl_init;
@@ -46,6 +57,8 @@ struct GameState
     int playerIndex = -1;
 
     GameState() = default;
+
+    GameObject& player() { return layers[LAYER_IDX_CHARACTERS][playerIndex]; }
 };
 
 struct Resources
@@ -105,6 +118,7 @@ void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameOb
 void collisionResponse(const SDLState* state, GameState* gs, Resources* res, const SDL_FRect& rectA,
                        const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime,
                        bool isHorizontal);
+void handleKeyInput(const SDLState* state, GameState* gs, GameObject& obj, SDL_Scancode key, bool keyDown);
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -224,6 +238,18 @@ SDL_AppResult SDL_AppIterate(void* appstate)
             drawObject(ss, gs, obj, deltaTime);
         }
     }
+
+    SDL_SetRenderDrawColor(ss->renderer, 255, 255, 255, 255);
+    SDL_RenderDebugText(ss->renderer, 5, 5,
+                        std::format("State: {}", static_cast<int>(gs->player().data.player.state)).c_str()
+    );
+
+    SDL_RenderDebugText(ss->renderer, 5, 15,
+                        std::format("Rect: {}", gs->player().GetCollider()).c_str()
+    );
+    SDL_RenderDebugText(ss->renderer, 5, 25,
+                        std::format("Vel: {}", gs->player().velocity).c_str()
+    );
 
     SDL_RenderPresent(ss->renderer);
 
