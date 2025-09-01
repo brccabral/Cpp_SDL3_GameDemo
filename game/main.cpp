@@ -360,12 +360,12 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                 {
                     if (a.velocity.x > 0) // going right
                     {
-                        a.position.x = rectB.x - rectA.w;
+                        a.position.x = rectB.x - rectA.w - a.collider.x;
                         a.velocity.x = 0;
                     }
                     else if (a.velocity.x < 0)
                     {
-                        a.position.x = rectB.x + rectB.w;
+                        a.position.x = rectB.x + rectB.w - a.collider.x;
                         a.velocity.x = 0;
                     }
                 }
@@ -373,12 +373,12 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                 {
                     if (a.velocity.y > 0) // going down
                     {
-                        a.position.y = rectB.y - rectA.h;
+                        a.position.y = rectB.y - rectA.h - a.collider.y;
                         a.velocity.y = 0;
                     }
                     else if (a.velocity.y < 0)
                     {
-                        a.position.y = rectB.y + rectB.h;
+                        a.position.y = rectB.y + rectB.h - a.collider.y;
                         a.velocity.y = 0;
                     }
                 }
@@ -392,8 +392,14 @@ void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameOb
                     GameObject& objB,
                     float deltaTime)
 {
-    SDL_FRect rectA{.x = objA.position.x, .y = objA.position.y, .w = TILE_SIZE, .h = TILE_SIZE};
-    SDL_FRect rectB{.x = objB.position.x, .y = objB.position.y, .w = TILE_SIZE, .h = TILE_SIZE};
+    SDL_FRect rectA{
+        .x = objA.position.x + objA.collider.x, .y = objA.position.y + objA.collider.y, .w = objA.collider.w,
+        .h = objA.collider.h
+    };
+    SDL_FRect rectB{
+        .x = objB.position.x + objB.collider.x, .y = objB.position.y + objB.collider.y, .w = objB.collider.w,
+        .h = objB.collider.h
+    };
     SDL_FRect rectC{}; // collision result
 
     if (SDL_GetRectIntersectionFloat(&rectA, &rectB, &rectC) && (rectC.w > 0 || rectC.h > 0))
@@ -413,7 +419,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
      * 6 - Brick
      */
     short map[MAP_ROWS][MAP_COLS] = {
-        4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -431,6 +437,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
         o.type = type;
         o.position = glm::vec2(c * TILE_SIZE, state->logH - (MAP_ROWS - r) * TILE_SIZE);
         o.texture = tex;
+        o.collider = {0, 0, TILE_SIZE, TILE_SIZE};
         return o;
     };
 
@@ -461,6 +468,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                     player.animations = res->playerAnims;
                     player.currentAnimation = res->ANIM_PLAYER_IDLE;
                     player.dynamic = true;
+                    player.collider = {11, 6, 10, 26};
                     gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
                     break;
                 }

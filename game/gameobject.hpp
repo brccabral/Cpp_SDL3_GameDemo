@@ -47,6 +47,7 @@ struct GameObject
     int currentAnimation = -1;
     SDL_Texture* texture = nullptr;
     bool dynamic{};
+    SDL_FRect collider{};
 
     GameObject() = default;
 };
