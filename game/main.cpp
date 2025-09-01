@@ -29,7 +29,7 @@ typedef struct SDLState
     int width, height;
     int logW, logH; // logical width/height
     const bool* keys;
-    uint64_t prevTime = SDL_GetTicks();
+    uint64_t prevTime;
 
     ~SDLState() = default;
 } SDLState;
@@ -160,6 +160,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     res->load(ss);
     createTiles(ss, gs, res);
 
+    ss->prevTime = SDL_GetTicks();
     return SDL_APP_CONTINUE;
 }
 
