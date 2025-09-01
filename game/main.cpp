@@ -197,6 +197,10 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     float deltaTime = (float)(nowTime - ss->prevTime) / 1000.0f;
     ss->prevTime = nowTime;
 
+    // Draw
+    SDL_SetRenderDrawColor(ss->renderer, 20, 10, 30, 255);
+    SDL_RenderClear(ss->renderer);
+
     // update
     for (auto& layer : gs->layers)
     {
@@ -209,10 +213,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
             }
         }
     }
-
-    // Draw
-    SDL_SetRenderDrawColor(ss->renderer, 20, 10, 30, 255);
-    SDL_RenderClear(ss->renderer);
 
     for (auto& layer : gs->layers)
     {
