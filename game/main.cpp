@@ -43,7 +43,7 @@ const int TILE_SIZE = 32;
 struct GameState
 {
     std::array<std::vector<GameObject>, 2> layers;
-    int playerIndex = 0;
+    int playerIndex = -1;
 
     GameState() = default;
 };
@@ -122,6 +122,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     SDLState* ss = &as->sdlState;
     Resources* res = &as->resources;
     GameState* gs = &as->gameState;
+    gs->playerIndex = -1;
 
     ss->sdl_init = {SDL_Init(SDL_INIT_VIDEO), [](const int&) { SDL_Quit(); }};
     if (!ss->sdl_init)
@@ -470,6 +471,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                     player.dynamic = true;
                     player.collider = {11, 6, 10, 26};
                     gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
+                    gs->playerIndex = gs->layers[LAYER_IDX_CHARACTERS].size() - 1;
                     break;
                 }
             case 5: // grass
@@ -491,4 +493,5 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
             }
         }
     }
+    assert(gs->playerIndex != -1);
 }
