@@ -182,6 +182,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
     auto* ss = &((AppState*)appstate)->sdlState;
+    auto* gs = &((AppState*)appstate)->gameState;
 
     switch (event->type)
     {
@@ -193,6 +194,16 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
         {
             ss->width = event->window.data1;
             ss->height = event->window.data2;
+            break;
+        }
+    case SDL_EVENT_KEY_DOWN:
+        {
+            handleKeyInput(ss, gs, gs->player(), event->key.scancode, true);
+            break;
+        }
+    case SDL_EVENT_KEY_UP:
+        {
+            handleKeyInput(ss, gs, gs->player(), event->key.scancode, false);
             break;
         }
     default:
@@ -283,6 +294,10 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
     {
         obj.velocity += glm::vec2(0, 500) * deltaTime;
     }
+    else
+    {
+        return;
+    }
 
     if (obj.type == ObjectType::player)
     {
@@ -362,6 +377,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         }
     }
     // vertical
+    bool foundGround = false;
     obj.position.y += obj.velocity.y * deltaTime;
     for (auto& layer : gs->layers)
     {
@@ -372,6 +388,33 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 continue;
             }
             checkCollision(state, gs, res, obj, objB, deltaTime, false);
+
+            // grounded sensor
+            SDL_FRect sensor{
+                obj.position.x + obj.collider.x,
+                obj.position.y + obj.collider.y + obj.collider.h,
+                obj.collider.w,
+                1
+            };
+            SDL_FRect rectB{
+                objB.position.x + objB.collider.x,
+                objB.position.y + objB.collider.y,
+                objB.collider.w,
+                objB.collider.h
+            };
+            SDL_FRect rectC;
+            if (SDL_GetRectIntersectionFloat(&sensor, &rectB, &rectC) && (rectC.w > 0.00001f && rectC.h > 0.00001f))
+            {
+                foundGround = true;
+            }
+        }
+    }
+    if (foundGround != obj.grounded)
+    {
+        obj.grounded = foundGround;
+        if (foundGround && obj.type == ObjectType::player)
+        {
+            obj.data.player.state = PlayerState::running; // if player stopped running, the next frame will change to idle
         }
     }
 }
@@ -516,4 +559,38 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
         }
     }
     assert(gs->playerIndex != -1);
+}
+
+void handleKeyInput(const SDLState* state, GameState* gs, GameObject& obj, SDL_Scancode key, bool keyDown)
+{
+    const float JUMP_FORCE = -200.0f;
+    if (obj.type != ObjectType::player)
+    {
+        return;
+    }
+    switch (obj.data.player.state)
+    {
+    case PlayerState::idle:
+        {
+            if (key == SDL_SCANCODE_K && keyDown)
+            {
+                obj.velocity.y += JUMP_FORCE;
+                obj.data.player.state = PlayerState::jumping;
+            }
+            break;
+        }
+    case PlayerState::running:
+        {
+            if (key == SDL_SCANCODE_K && keyDown)
+            {
+                obj.velocity.y += JUMP_FORCE;
+                obj.data.player.state = PlayerState::jumping;
+            }
+            break;
+        }
+    default:
+        {
+            break;
+        }
+    }
 }

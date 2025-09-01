@@ -48,6 +48,7 @@ struct GameObject
     SDL_Texture* texture = nullptr;
     bool dynamic{};
     SDL_FRect collider{};
+    bool grounded{};
 
     GameObject() = default;
     SDL_FRect GetCollider() const;
