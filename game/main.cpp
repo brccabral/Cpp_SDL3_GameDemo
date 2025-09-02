@@ -56,6 +56,8 @@ struct GameState
     std::array<std::vector<GameObject>, 2> layers;
     std::vector<GameObject> backgroundTiles{};
     std::vector<GameObject> foregroundTiles{};
+    std::vector<GameObject> bullets{};
+
     int playerIndex = -1;
     SDL_FRect mapViewport{};
     float bg2Scroll{}, bg3Scroll{}, bg4Scroll{};
@@ -74,6 +76,11 @@ struct Resources
     const int ANIM_PLAYER_RUNNING = 1;
     const int ANIM_PLAYER_SLIDE = 2;
     std::vector<Animation> playerAnims;
+
+    // bullet
+    const int ANIM_BULLET_MOVING = 0;
+    const int ANIM_BULLET_HIT = 1;
+    std::vector<Animation> bulletAnims;
 
     std::vector<AutoRelease<SDL_Texture*>> textures;
 
@@ -94,6 +101,10 @@ struct Resources
     SDL_Texture* texBg3;
     SDL_Texture* texBg4;
 
+    // bullets
+    SDL_Texture* texBullet;
+    SDL_Texture* texBulletHit;
+
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
         AutoRelease<SDL_Texture*> tex = {IMG_LoadTexture(state->renderer, filepath.c_str()), SDL_DestroyTexture};
@@ -109,6 +120,10 @@ struct Resources
         playerAnims[ANIM_PLAYER_RUNNING] = Animation{4, 0.5f};
         playerAnims[ANIM_PLAYER_SLIDE] = Animation{1, 1.0f};
 
+        bulletAnims.resize(2);
+        bulletAnims[ANIM_BULLET_MOVING] = Animation{4, 0.05f};
+        bulletAnims[ANIM_BULLET_HIT] = Animation{4, 0.15f};
+
         texIdle = loadTexture(state, "data/idle.png");
         texRun = loadTexture(state, "data/run.png");
         texSlide = loadTexture(state, "data/slide.png");
@@ -120,6 +135,8 @@ struct Resources
         texBg2 = loadTexture(state, "data/bg/bg_layer2.png");
         texBg3 = loadTexture(state, "data/bg/bg_layer3.png");
         texBg4 = loadTexture(state, "data/bg/bg_layer4.png");
+        texBullet = loadTexture(state, "data/bullet.png");
+        texBulletHit = loadTexture(state, "data/bullet_hit.png");
     }
 
     ~Resources() = default;
@@ -139,7 +156,7 @@ typedef struct AppState
     };
 } AppState;
 
-void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float deltaTime);
+void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float width, float height, float deltaTime);
 void update(const SDLState* state, GameState* gs, Resources* res, GameObject& obj, float deltaTime);
 void createTiles(const SDLState* state, GameState* gs, Resources* res);
 void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameObject& objA,
@@ -310,12 +327,28 @@ SDL_AppResult SDL_AppIterate(void* appstate)
         }
     }
 
+    for (auto& bullet : gs->bullets)
+    {
+        update(ss, gs, res, bullet, deltaTime);
+        if (bullet.currentAnimation >= 0)
+        {
+            bullet.animations[bullet.currentAnimation].step(deltaTime);
+        }
+    }
+
+
     for (auto& layer : gs->layers)
     {
         for (auto& obj : layer)
         {
-            drawObject(ss, gs, obj, deltaTime);
+            drawObject(ss, gs, obj, TILE_SIZE, TILE_SIZE, deltaTime);
         }
+    }
+
+    for (auto& bullet : gs->bullets)
+    {
+        drawObject(ss, gs, bullet, bullet.collider.w, bullet.collider.h, deltaTime);
+        SDL_RenderDebugText(ss->renderer, 5, 35, std::format("Bullet {}", bullet.velocity).c_str());
     }
 
     // draw foreground tiles
@@ -353,13 +386,12 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
     SDL_free(as);
 }
 
-void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float deltaTime)
+void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float width, float height, float deltaTime)
 {
-    const float spriteSize = 32;
-    float srcX = obj.currentAnimation >= 0 ? obj.animations[obj.currentAnimation].currentFrame() * spriteSize : 0.0f;
+    float srcX = obj.currentAnimation >= 0 ? obj.animations[obj.currentAnimation].currentFrame() * width : 0.0f;
 
-    SDL_FRect src{.x = srcX, .y = 0, .w = spriteSize, .h = spriteSize};
-    SDL_FRect dst{.x = obj.position.x - gs->mapViewport.x, .y = obj.position.y, .w = spriteSize, .h = spriteSize};
+    SDL_FRect src{.x = srcX, .y = 0, .w = width, .h = height};
+    SDL_FRect dst{.x = obj.position.x - gs->mapViewport.x, .y = obj.position.y, .w = width, .h = height};
 
     SDL_FlipMode flipMode = obj.direction < 0 ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(state->renderer, obj.texture, &src, &dst, 0, nullptr,
@@ -372,10 +404,6 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
     if (obj.dynamic)
     {
         obj.velocity += glm::vec2(0, 500) * deltaTime;
-    }
-    else
-    {
-        return;
     }
 
     if (obj.type == ObjectType::player)
@@ -418,6 +446,21 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                             obj.velocity.x += amount;
                         }
                     }
+                }
+                if (state->keys[SDL_SCANCODE_J])
+                {
+                    GameObject bullet;
+                    bullet.type = ObjectType::bullet;
+                    bullet.direction = gs->player().direction;
+                    bullet.texture = res->texBullet;
+                    bullet.currentAnimation = res->ANIM_BULLET_MOVING;
+                    bullet.collider = {
+                        0, 0, static_cast<float>(res->texBullet->h), static_cast<float>(res->texBullet->h)
+                    };
+                    bullet.velocity = glm::vec2(obj.velocity.x + 600.0f * obj.direction, 0);
+                    bullet.animations = res->bulletAnims;
+                    bullet.position = obj.position;
+                    gs->bullets.push_back(std::move(bullet));
                 }
                 obj.texture = res->texIdle;
                 obj.currentAnimation = res->ANIM_PLAYER_IDLE;
