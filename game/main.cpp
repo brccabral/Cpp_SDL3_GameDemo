@@ -56,6 +56,7 @@ struct GameState
     std::array<std::vector<GameObject>, 2> layers;
     int playerIndex = -1;
     SDL_FRect mapViewport{};
+    float bg2Scroll{}, bg3Scroll{}, bg4Scroll{};
 
     GameState(const SDLState* ss)
     {
@@ -73,13 +74,23 @@ struct Resources
     std::vector<Animation> playerAnims;
 
     std::vector<AutoRelease<SDL_Texture*>> textures;
+
+    // player
     SDL_Texture* texIdle;
     SDL_Texture* texRun;
     SDL_Texture* texSlide;
+
+    // tiles
     SDL_Texture* texBrick;
     SDL_Texture* texGrass;
     SDL_Texture* texGround;
     SDL_Texture* texPanel;
+
+    // backgrounds
+    SDL_Texture* texBg1;
+    SDL_Texture* texBg2;
+    SDL_Texture* texBg3;
+    SDL_Texture* texBg4;
 
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
@@ -103,6 +114,10 @@ struct Resources
         texGrass = loadTexture(state, "data/tiles/grass.png");
         texGround = loadTexture(state, "data/tiles/ground.png");
         texPanel = loadTexture(state, "data/tiles/panel.png");
+        texBg1 = loadTexture(state, "data/bg/bg_layer1.png");
+        texBg2 = loadTexture(state, "data/bg/bg_layer2.png");
+        texBg3 = loadTexture(state, "data/bg/bg_layer3.png");
+        texBg4 = loadTexture(state, "data/bg/bg_layer4.png");
     }
 
     ~Resources() = default;
@@ -132,6 +147,8 @@ void collisionResponse(const SDLState* state, GameState* gs, Resources* res, con
                        const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime,
                        bool isHorizontal);
 void handleKeyInput(const SDLState* state, GameState* gs, GameObject& obj, SDL_Scancode key, bool keyDown);
+void drawParalaxBackground(SDL_Renderer* renderer, SDL_Texture* texture, float xVelocity, float& scrollPos,
+                           float scrollFactor, float deltaTime);
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -257,6 +274,11 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     // Draw
     SDL_SetRenderDrawColor(ss->renderer, 20, 10, 30, 255);
     SDL_RenderClear(ss->renderer);
+
+    SDL_RenderTexture(ss->renderer, res->texBg1, nullptr, nullptr);
+    drawParalaxBackground(ss->renderer, res->texBg4, gs->player().velocity.x, gs->bg4Scroll, 0.075f, deltaTime);
+    drawParalaxBackground(ss->renderer, res->texBg3, gs->player().velocity.x, gs->bg3Scroll, 0.150f, deltaTime);
+    drawParalaxBackground(ss->renderer, res->texBg2, gs->player().velocity.x, gs->bg2Scroll, 0.3f, deltaTime);
 
     // update
     for (auto& layer : gs->layers)
@@ -642,4 +664,24 @@ void handleKeyInput(const SDLState* state, GameState* gs, GameObject& obj, SDL_S
             break;
         }
     }
+}
+
+void drawParalaxBackground(SDL_Renderer* renderer, SDL_Texture* texture, float xVelocity, float& scrollPos,
+                           float scrollFactor, float deltaTime)
+{
+    scrollPos -= xVelocity * scrollFactor * deltaTime;
+    if (scrollPos <= -texture->w)
+    {
+        scrollPos = 0;
+    }
+
+    // double the dest width makes SDL_RenderTextureTiled draw same texture twice
+    // avoiding calling renderTexture twice
+    SDL_FRect dst
+    {
+        scrollPos, 30, texture->w * 2.0f,
+        static_cast<float>(texture->h)
+    };
+
+    SDL_RenderTextureTiled(renderer, texture, nullptr, 1, &dst);
 }
