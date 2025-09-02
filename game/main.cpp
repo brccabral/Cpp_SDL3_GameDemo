@@ -63,8 +63,8 @@ struct GameState
 
 struct Resources
 {
-    const int ANIM_PLAYER_IDLE = 0;
-    const int ANIM_PLAYER_RUNNING = 0;
+    int ANIM_PLAYER_IDLE = 0;
+    int ANIM_PLAYER_RUNNING = 1;
     std::vector<Animation> playerAnims;
 
     std::vector<AutoRelease<SDL_Texture*>> textures;
@@ -136,6 +136,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     *appstate = as;
     SDLState* ss = &as->sdlState;
     Resources* res = &as->resources;
+    res->ANIM_PLAYER_IDLE = 0;
+    res->ANIM_PLAYER_RUNNING = 1;
     GameState* gs = &as->gameState;
     gs->playerIndex = -1;
 
