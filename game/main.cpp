@@ -196,6 +196,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), ss->window);
         return SDL_APP_FAILURE;
     }
+    SDL_SetRenderVSync(ss->renderer, 1);
 
     // configure presentation
     // SDL will scale the final render buffer for us
