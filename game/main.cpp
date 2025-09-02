@@ -63,8 +63,9 @@ struct GameState
 
 struct Resources
 {
-    int ANIM_PLAYER_IDLE = 0;
-    int ANIM_PLAYER_RUNNING = 1;
+    const int ANIM_PLAYER_IDLE = 0;
+    const int ANIM_PLAYER_RUNNING = 1;
+    const int ANIM_PLAYER_SLIDE = 2;
     std::vector<Animation> playerAnims;
 
     std::vector<AutoRelease<SDL_Texture*>> textures;
@@ -127,17 +128,18 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
-    auto* as = (AppState*)SDL_calloc(1, sizeof(AppState));
-    if (!as)
+    void* raw = SDL_calloc(1, sizeof(AppState));
+    if (!raw)
     {
         return SDL_APP_FAILURE;
     }
+    // SDL_calloc sets all values to 0, even those with default values.
+    // call `new(raw) AppState()` to call C++ constructor
+    auto* as = new(raw) AppState();
 
     *appstate = as;
     SDLState* ss = &as->sdlState;
     Resources* res = &as->resources;
-    res->ANIM_PLAYER_IDLE = 0;
-    res->ANIM_PLAYER_RUNNING = 1;
     GameState* gs = &as->gameState;
     gs->playerIndex = -1;
 
