@@ -55,8 +55,12 @@ struct GameState
 {
     std::array<std::vector<GameObject>, 2> layers;
     int playerIndex = -1;
+    SDL_FRect mapViewport{};
 
-    GameState() = default;
+    GameState(const SDLState* ss)
+    {
+        mapViewport = {0, 0, static_cast<float>(ss->logW), static_cast<float>(ss->logH)};
+    };
 
     GameObject& player() { return layers[LAYER_IDX_CHARACTERS][playerIndex]; }
 };
@@ -106,11 +110,16 @@ struct Resources
 
 typedef struct AppState
 {
-    SDLState sdlState;
-    GameState gameState;
-    Resources resources;
+    SDLState* sdlState{};
+    GameState* gameState{};
+    Resources* resources{};
 
-    ~AppState() = default;
+    ~AppState()
+    {
+        delete sdlState;
+        delete gameState;
+        delete resources;
+    };
 } AppState;
 
 void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float deltaTime);
@@ -142,10 +151,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     auto* as = new(raw) AppState();
 
     *appstate = as;
-    SDLState* ss = &as->sdlState;
-    Resources* res = &as->resources;
-    GameState* gs = &as->gameState;
-    gs->playerIndex = -1;
+    SDLState* ss = new SDLState();
+    Resources* res = new Resources();
 
     ss->sdl_init = {SDL_Init(SDL_INIT_VIDEO), [](const int&) { SDL_Quit(); }};
     if (!ss->sdl_init)
@@ -181,6 +188,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     ss->keys = SDL_GetKeyboardState(nullptr);
 
     res->load(ss);
+
+    GameState* gs = new GameState(ss);
     createTiles(ss, gs, res);
 
     // force double buffer allocate memory
@@ -190,6 +199,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     SDL_RenderClear(ss->renderer);
     SDL_RenderPresent(ss->renderer);
 
+    as->sdlState = ss;
+    as->resources = res;
+    as->gameState = gs;
+
     // getTicks() start with SDL_Init, but we spent time loading resources, so, getTicks() before first deltaTime
     ss->prevTime = SDL_GetTicks();
     return SDL_APP_CONTINUE;
@@ -197,8 +210,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
-    auto* ss = &((AppState*)appstate)->sdlState;
-    auto* gs = &((AppState*)appstate)->gameState;
+    auto* ss = ((AppState*)appstate)->sdlState;
+    auto* gs = ((AppState*)appstate)->gameState;
 
     switch (event->type)
     {
@@ -233,9 +246,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-    auto* ss = &((AppState*)appstate)->sdlState;
-    auto* gs = &((AppState*)appstate)->gameState;
-    auto* res = &((AppState*)appstate)->resources;
+    auto* ss = ((AppState*)appstate)->sdlState;
+    auto* gs = ((AppState*)appstate)->gameState;
+    auto* res = ((AppState*)appstate)->resources;
 
     uint64_t nowTime = SDL_GetTicks();
     float deltaTime = (float)(nowTime - ss->prevTime) / 1000.0f;
@@ -257,6 +270,9 @@ SDL_AppResult SDL_AppIterate(void* appstate)
             }
         }
     }
+
+    // calculate viewport position
+    gs->mapViewport.x = gs->player().position.x + TILE_SIZE / 2 - gs->mapViewport.w / 2;
 
     for (auto& layer : gs->layers)
     {
@@ -296,7 +312,7 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float del
     float srcX = obj.currentAnimation >= 0 ? obj.animations[obj.currentAnimation].currentFrame() * spriteSize : 0.0f;
 
     SDL_FRect src{.x = srcX, .y = 0, .w = spriteSize, .h = spriteSize};
-    SDL_FRect dst{.x = obj.position.x, .y = obj.position.y, .w = spriteSize, .h = spriteSize};
+    SDL_FRect dst{.x = obj.position.x - gs->mapViewport.x, .y = obj.position.y, .w = spriteSize, .h = spriteSize};
 
     SDL_FlipMode flipMode = obj.direction < 0 ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(state->renderer, obj.texture, &src, &dst, 0, nullptr,
