@@ -134,6 +134,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     void* raw = SDL_calloc(1, sizeof(AppState));
     if (!raw)
     {
+        SDL_free(raw);
         return SDL_APP_FAILURE;
     }
     // SDL_calloc sets all values to 0, even those with default values.
