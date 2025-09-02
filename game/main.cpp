@@ -71,6 +71,7 @@ struct Resources
     std::vector<AutoRelease<SDL_Texture*>> textures;
     SDL_Texture* texIdle;
     SDL_Texture* texRun;
+    SDL_Texture* texSlide;
     SDL_Texture* texBrick;
     SDL_Texture* texGrass;
     SDL_Texture* texGround;
@@ -89,9 +90,11 @@ struct Resources
         playerAnims.resize(5);
         playerAnims[ANIM_PLAYER_IDLE] = Animation{8, 1.6f};
         playerAnims[ANIM_PLAYER_RUNNING] = Animation{4, 0.5f};
+        playerAnims[ANIM_PLAYER_SLIDE] = Animation{1, 1.0f};
 
         texIdle = loadTexture(state, "data/idle.png");
         texRun = loadTexture(state, "data/run.png");
+        texSlide = loadTexture(state, "data/slide.png");
         texBrick = loadTexture(state, "data/tiles/brick.png");
         texGrass = loadTexture(state, "data/tiles/grass.png");
         texGround = loadTexture(state, "data/tiles/ground.png");
@@ -362,8 +365,17 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 {
                     obj.data.player.state = PlayerState::idle;
                 }
-                obj.texture = res->texRun;
-                obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
+                // moving in opposite direction of velocity, sliding! (changing direction during move)
+                if (obj.velocity.x * obj.direction < 0 && obj.grounded)
+                {
+                    obj.texture = res->texSlide;
+                    obj.currentAnimation = res->ANIM_PLAYER_SLIDE;
+                }
+                else
+                {
+                    obj.texture = res->texRun;
+                    obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
+                }
                 break;
             }
         case PlayerState::jumping:
