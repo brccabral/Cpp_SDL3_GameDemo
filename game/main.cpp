@@ -54,6 +54,8 @@ const int TILE_SIZE = 32;
 struct GameState
 {
     std::array<std::vector<GameObject>, 2> layers;
+    std::vector<GameObject> backgroundTiles{};
+    std::vector<GameObject> foregroundTiles{};
     int playerIndex = -1;
     SDL_FRect mapViewport{};
     float bg2Scroll{}, bg3Scroll{}, bg4Scroll{};
@@ -271,6 +273,9 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     float deltaTime = (float)(nowTime - ss->prevTime) / 1000.0f;
     ss->prevTime = nowTime;
 
+    // calculate viewport position
+    gs->mapViewport.x = gs->player().position.x + TILE_SIZE / 2 - gs->mapViewport.w / 2;
+
     // Draw
     SDL_SetRenderDrawColor(ss->renderer, 20, 10, 30, 255);
     SDL_RenderClear(ss->renderer);
@@ -279,6 +284,17 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     drawParalaxBackground(ss->renderer, res->texBg4, gs->player().velocity.x, gs->bg4Scroll, 0.075f, deltaTime);
     drawParalaxBackground(ss->renderer, res->texBg3, gs->player().velocity.x, gs->bg3Scroll, 0.150f, deltaTime);
     drawParalaxBackground(ss->renderer, res->texBg2, gs->player().velocity.x, gs->bg2Scroll, 0.3f, deltaTime);
+
+    // draw background tiles
+    for (const auto& obj : gs->backgroundTiles)
+    {
+        SDL_FRect dst = {
+            obj.position.x - gs->mapViewport.x, obj.position.y,
+            static_cast<float>(obj.texture->w),
+            static_cast<float>(obj.texture->h)
+        };
+        SDL_RenderTexture(ss->renderer, obj.texture, nullptr, &dst);
+    }
 
     // update
     for (auto& layer : gs->layers)
@@ -293,15 +309,23 @@ SDL_AppResult SDL_AppIterate(void* appstate)
         }
     }
 
-    // calculate viewport position
-    gs->mapViewport.x = gs->player().position.x + TILE_SIZE / 2 - gs->mapViewport.w / 2;
-
     for (auto& layer : gs->layers)
     {
         for (auto& obj : layer)
         {
             drawObject(ss, gs, obj, deltaTime);
         }
+    }
+
+    // draw foreground tiles
+    for (const auto& obj : gs->foregroundTiles)
+    {
+        SDL_FRect dst = {
+            obj.position.x - gs->mapViewport.x, obj.position.y,
+            static_cast<float>(obj.texture->w),
+            static_cast<float>(obj.texture->h)
+        };
+        SDL_RenderTexture(ss->renderer, obj.texture, nullptr, &dst);
     }
 
     SDL_SetRenderDrawColor(ss->renderer, 255, 255, 255, 255);
@@ -568,67 +592,100 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     };
 
-    const auto createObject = [state](const int r, const int c, SDL_Texture* tex, const ObjectType type)
-    {
-        GameObject o;
-        o.type = type;
-        o.position = glm::vec2(c * TILE_SIZE, state->logH - (MAP_ROWS - r) * TILE_SIZE);
-        o.texture = tex;
-        o.collider = {0, 0, TILE_SIZE, TILE_SIZE};
-        return o;
+    short background[MAP_ROWS][MAP_COLS] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     };
 
-    for (int r = 0; r < MAP_ROWS; r++)
+    short foreground[MAP_ROWS][MAP_COLS] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    };
+
+    const auto loadMap = [&state, &gs, &res](short layer[MAP_ROWS][MAP_COLS])
     {
-        for (int c = 0; c < MAP_COLS; c++)
+        const auto createObject = [state](const int r, const int c, SDL_Texture* tex, const ObjectType type)
         {
-            switch (map[r][c])
+            GameObject o;
+            o.type = type;
+            o.position = glm::vec2(c * TILE_SIZE, state->logH - (MAP_ROWS - r) * TILE_SIZE);
+            o.texture = tex;
+            o.collider = {0, 0, TILE_SIZE, TILE_SIZE};
+            return o;
+        };
+
+        for (int r = 0; r < MAP_ROWS; r++)
+        {
+            for (int c = 0; c < MAP_COLS; c++)
             {
-            case 1: // ground
+                switch (layer[r][c])
                 {
-                    GameObject ground = createObject(r, c, res->texGround, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(ground));
-                    break;
-                }
-            case 2: // panel
-                {
-                    GameObject panel = createObject(r, c, res->texPanel, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(panel));
-                    break;
-                }
-            case 4: // player
-                {
-                    GameObject player = createObject(r, c, res->texIdle, ObjectType::player);
-                    player.data.player = PlayerData();
-                    player.acceleration = glm::vec2(300.f, 0.f);
-                    player.maxSpeedX = 100.f;
-                    player.animations = res->playerAnims;
-                    player.currentAnimation = res->ANIM_PLAYER_IDLE;
-                    player.dynamic = true;
-                    player.collider = {11, 6, 10, 26};
-                    gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
-                    gs->playerIndex = gs->layers[LAYER_IDX_CHARACTERS].size() - 1;
-                    break;
-                }
-            case 5: // grass
-                {
-                    GameObject grass = createObject(r, c, res->texGrass, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(grass));
-                    break;
-                }
-            case 6: // brick
-                {
-                    GameObject brick = createObject(r, c, res->texBrick, ObjectType::level);
-                    gs->layers[LAYER_IDX_LEVEL].push_back(std::move(brick));
-                    break;
-                }
-            default:
-                {
-                    break;
+                case 1: // ground
+                    {
+                        GameObject ground = createObject(r, c, res->texGround, ObjectType::level);
+                        gs->layers[LAYER_IDX_LEVEL].push_back(std::move(ground));
+                        break;
+                    }
+                case 2: // panel
+                    {
+                        GameObject panel = createObject(r, c, res->texPanel, ObjectType::level);
+                        gs->layers[LAYER_IDX_LEVEL].push_back(std::move(panel));
+                        break;
+                    }
+                case 4: // player
+                    {
+                        GameObject player = createObject(r, c, res->texIdle, ObjectType::player);
+                        player.data.player = PlayerData();
+                        player.acceleration = glm::vec2(300.f, 0.f);
+                        player.maxSpeedX = 100.f;
+                        player.animations = res->playerAnims;
+                        player.currentAnimation = res->ANIM_PLAYER_IDLE;
+                        player.dynamic = true;
+                        player.collider = {11, 6, 10, 26};
+                        gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(player));
+                        gs->playerIndex = gs->layers[LAYER_IDX_CHARACTERS].size() - 1;
+                        break;
+                    }
+                case 5: // grass
+                    {
+                        GameObject grass = createObject(r, c, res->texGrass, ObjectType::level);
+                        gs->foregroundTiles.push_back(std::move(grass));
+                        break;
+                    }
+                case 6: // brick
+                    {
+                        GameObject brick = createObject(r, c, res->texBrick, ObjectType::level);
+                        gs->backgroundTiles.push_back(std::move(brick));
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
                 }
             }
         }
-    }
+    };
+    loadMap(map);
+    loadMap(background);
+    loadMap(foreground);
+
     assert(gs->playerIndex != -1);
 }
 
