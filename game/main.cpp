@@ -40,7 +40,7 @@ typedef struct SDLState
     int width, height;
     int logW, logH; // logical width/height
     const bool* keys;
-    uint64_t prevTime;
+    uint64_t prevTime{};
 
     ~SDLState() = default;
 } SDLState;
@@ -179,6 +179,14 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     res->load(ss);
     createTiles(ss, gs, res);
 
+    // force double buffer allocate memory
+    SDL_SetRenderDrawColor(ss->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(ss->renderer);
+    SDL_RenderPresent(ss->renderer);
+    SDL_RenderClear(ss->renderer);
+    SDL_RenderPresent(ss->renderer);
+
+    // getTicks() start with SDL_Init, but we spent time loading resources, so, getTicks() before first deltaTime
     ss->prevTime = SDL_GetTicks();
     return SDL_APP_CONTINUE;
 }
