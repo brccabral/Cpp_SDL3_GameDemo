@@ -425,15 +425,27 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float wid
 
     if (gs->debugMode)
     {
+        SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_BLEND);
+
+        // collision
         SDL_FRect rectA = {
             obj.position.x + obj.collider.x - gs->mapViewport.x,
             obj.position.y + obj.collider.y,
             obj.collider.w,
             obj.collider.h,
         };
-        SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(state->renderer, 255, 0, 0, 150);
         SDL_RenderFillRect(state->renderer, &rectA);
+
+        // ground sensor
+        SDL_FRect ground_sensor{
+            .x = obj.position.x + obj.collider.x - gs->mapViewport.x,
+            .y = obj.position.y + obj.collider.y + obj.collider.h,
+            .w = obj.collider.w, .h = 1
+        };
+        SDL_SetRenderDrawColor(state->renderer, 0, 0, 255, 150);
+        SDL_RenderFillRect(state->renderer, &ground_sensor);
+
         SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_NONE);
     }
 }
