@@ -458,9 +458,9 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         obj.velocity += glm::vec2(0, 500) * deltaTime;
     }
 
+    float currentDirection = 0;
     if (obj.type == ObjectType::player)
     {
-        float currentDirection = 0;
         if (state->keys[SDL_SCANCODE_A])
         {
             currentDirection += -1;
@@ -468,10 +468,6 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         if (state->keys[SDL_SCANCODE_D])
         {
             currentDirection += 1;
-        }
-        if (currentDirection != 0)
-        {
-            obj.direction = currentDirection;
         }
 
         Timer& weaponTimer = obj.data.player.weaponTimer;
@@ -497,6 +493,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                     };
                     bullet.velocity = glm::vec2(obj.velocity.x + 600.0f * obj.direction, 0);
                     bullet.animations = res->bulletAnims;
+                    bullet.maxSpeedX = 1000.0f;
 
                     // adjust bullet position (lerp)
                     const float left = 0;
@@ -577,10 +574,14 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 break;
             }
         }
-
-        obj.velocity += currentDirection * obj.acceleration * deltaTime;
-        obj.velocity.x = glm::clamp(obj.velocity.x, -obj.maxSpeedX, obj.maxSpeedX);
     }
+
+    if (currentDirection != 0)
+    {
+        obj.direction = currentDirection;
+    }
+    obj.velocity += currentDirection * obj.acceleration * deltaTime;
+    obj.velocity.x = glm::clamp(obj.velocity.x, -obj.maxSpeedX, obj.maxSpeedX);
 
     // horizontal
     obj.position.x += obj.velocity.x * deltaTime;
