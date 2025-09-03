@@ -596,23 +596,26 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             }
             checkCollision(state, gs, res, obj, objB, deltaTime, false);
 
-            // grounded sensor
-            SDL_FRect sensor{
-                obj.position.x + obj.collider.x,
-                obj.position.y + obj.collider.y + obj.collider.h,
-                obj.collider.w,
-                1
-            };
-            SDL_FRect rectB{
-                objB.position.x + objB.collider.x,
-                objB.position.y + objB.collider.y,
-                objB.collider.w,
-                objB.collider.h
-            };
-            SDL_FRect rectC;
-            if (SDL_GetRectIntersectionFloat(&sensor, &rectB, &rectC) && (rectC.w > 0.00001f && rectC.h > 0.00001f))
+            if (objB.type == ObjectType::level)
             {
-                foundGround = true;
+                // grounded sensor
+                SDL_FRect sensor{
+                    obj.position.x + obj.collider.x,
+                    obj.position.y + obj.collider.y + obj.collider.h,
+                    obj.collider.w,
+                    1
+                };
+                SDL_FRect rectB{
+                    objB.position.x + objB.collider.x,
+                    objB.position.y + objB.collider.y,
+                    objB.collider.w,
+                    objB.collider.h
+                };
+                SDL_FRect rectC;
+                if (SDL_GetRectIntersectionFloat(&sensor, &rectB, &rectC) && (rectC.w > 0.00001f && rectC.h > 0.00001f))
+                {
+                    foundGround = true;
+                }
             }
         }
     }
