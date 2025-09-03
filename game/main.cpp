@@ -503,7 +503,22 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                     bullet.position = glm::vec2(obj.position.x + xOffset,
                                                 obj.position.y + TILE_SIZE / 2.0f + 1);
 
-                    gs->bullets.push_back(std::move(bullet));
+                    // reuse inactive slots
+                    bool foundInactive = false;
+                    for (auto& bullet_obj : gs->bullets)
+                    {
+                        if (bullet_obj.data.bullet.state == BulletState::inactive)
+                        {
+                            foundInactive = true;
+                            bullet_obj = std::move(bullet);
+                            break;
+                        }
+                    }
+                    // if no inactive, push as new one
+                    if (!foundInactive)
+                    {
+                        gs->bullets.push_back(std::move(bullet));
+                    }
                 }
             }
             else
@@ -573,6 +588,17 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             {
                 break;
             }
+        }
+    }
+    else if (obj.type == ObjectType::bullet)
+    {
+        if (obj.position.x - gs->mapViewport.x < 0 ||
+            obj.position.x - gs->mapViewport.x > state->logW ||
+            obj.position.y - gs->mapViewport.y < 0 ||
+            obj.position.y - gs->mapViewport.y > state->logH
+        )
+        {
+            obj.data.bullet.state = BulletState::inactive;
         }
     }
 
