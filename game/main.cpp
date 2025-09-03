@@ -348,7 +348,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     for (auto& bullet : gs->bullets)
     {
         drawObject(ss, gs, bullet, bullet.collider.w, bullet.collider.h, deltaTime);
-        SDL_RenderDebugText(ss->renderer, 5, 35, std::format("Bullet {}", bullet.velocity).c_str());
     }
 
     // draw foreground tiles
@@ -422,6 +421,9 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             obj.direction = currentDirection;
         }
 
+        Timer& weaponTimer = obj.data.player.weaponTimer;
+        weaponTimer.step(deltaTime);
+
         switch (obj.data.player.state)
         {
         case PlayerState::idle:
@@ -449,18 +451,22 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 }
                 if (state->keys[SDL_SCANCODE_J])
                 {
-                    GameObject bullet;
-                    bullet.type = ObjectType::bullet;
-                    bullet.direction = gs->player().direction;
-                    bullet.texture = res->texBullet;
-                    bullet.currentAnimation = res->ANIM_BULLET_MOVING;
-                    bullet.collider = {
-                        0, 0, static_cast<float>(res->texBullet->h), static_cast<float>(res->texBullet->h)
-                    };
-                    bullet.velocity = glm::vec2(obj.velocity.x + 600.0f * obj.direction, 0);
-                    bullet.animations = res->bulletAnims;
-                    bullet.position = obj.position;
-                    gs->bullets.push_back(std::move(bullet));
+                    if (weaponTimer.isTimeout())
+                    {
+                        weaponTimer.reset();
+                        GameObject bullet;
+                        bullet.type = ObjectType::bullet;
+                        bullet.direction = gs->player().direction;
+                        bullet.texture = res->texBullet;
+                        bullet.currentAnimation = res->ANIM_BULLET_MOVING;
+                        bullet.collider = {
+                            0, 0, static_cast<float>(res->texBullet->h), static_cast<float>(res->texBullet->h)
+                        };
+                        bullet.velocity = glm::vec2(obj.velocity.x + 600.0f * obj.direction, 0);
+                        bullet.animations = res->bulletAnims;
+                        bullet.position = obj.position;
+                        gs->bullets.push_back(std::move(bullet));
+                    }
                 }
                 obj.texture = res->texIdle;
                 obj.currentAnimation = res->ANIM_PLAYER_IDLE;
