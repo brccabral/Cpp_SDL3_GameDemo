@@ -61,6 +61,7 @@ struct GameState
     int playerIndex = -1;
     SDL_FRect mapViewport{};
     float bg2Scroll{}, bg3Scroll{}, bg4Scroll{};
+    bool debugMode{};
 
     GameState(const SDLState* ss)
     {
@@ -285,6 +286,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
     case SDL_EVENT_KEY_UP:
         {
             handleKeyInput(ss, gs, gs->player(), event->key.scancode, false);
+            if (event->key.scancode == SDL_SCANCODE_F12)
+            {
+                gs->debugMode = !gs->debugMode;
+            }
             break;
         }
     default:
@@ -376,21 +381,24 @@ SDL_AppResult SDL_AppIterate(void* appstate)
         SDL_RenderTexture(ss->renderer, obj.texture, nullptr, &dst);
     }
 
-    SDL_SetRenderDrawColor(ss->renderer, 255, 255, 255, 255);
-    SDL_RenderDebugText(ss->renderer, 5, 5,
-                        std::format("S: {} B: {} G: {}",
-                                    static_cast<int>(gs->player().data.player.state),
-                                    gs->bullets.size(),
-                                    gs->player().grounded
-                        ).c_str()
-    );
+    if (gs->debugMode)
+    {
+        SDL_SetRenderDrawColor(ss->renderer, 255, 255, 255, 255);
+        SDL_RenderDebugText(ss->renderer, 5, 5,
+                            std::format("S: {} B: {} G: {}",
+                                        static_cast<int>(gs->player().data.player.state),
+                                        gs->bullets.size(),
+                                        gs->player().grounded
+                            ).c_str()
+        );
 
-    SDL_RenderDebugText(ss->renderer, 5, 15,
-                        std::format("Rect: {}", gs->player().GetCollider()).c_str()
-    );
-    SDL_RenderDebugText(ss->renderer, 5, 25,
-                        std::format("Vel: {}", gs->player().velocity).c_str()
-    );
+        SDL_RenderDebugText(ss->renderer, 5, 15,
+                            std::format("Rect: {}", gs->player().GetCollider()).c_str()
+        );
+        SDL_RenderDebugText(ss->renderer, 5, 25,
+                            std::format("Vel: {}", gs->player().velocity).c_str()
+        );
+    }
 
     SDL_RenderPresent(ss->renderer);
 
