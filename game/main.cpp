@@ -422,6 +422,20 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float wid
     SDL_FlipMode flipMode = obj.direction < 0 ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(state->renderer, obj.texture, &src, &dst, 0, nullptr,
                              flipMode);
+
+    if (gs->debugMode)
+    {
+        SDL_FRect rectA = {
+            obj.position.x + obj.collider.x - gs->mapViewport.x,
+            obj.position.y + obj.collider.y,
+            obj.collider.w,
+            obj.collider.h,
+        };
+        SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(state->renderer, 255, 0, 0, 150);
+        SDL_RenderFillRect(state->renderer, &rectA);
+        SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_NONE);
+    }
 }
 
 void update(const SDLState* state, GameState* gs, Resources* res, GameObject& obj, float deltaTime)
