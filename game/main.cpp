@@ -75,6 +75,8 @@ struct Resources
     const int ANIM_PLAYER_IDLE = 0;
     const int ANIM_PLAYER_RUNNING = 1;
     const int ANIM_PLAYER_SLIDE = 2;
+    const int ANIM_PLAYER_SHOOT = 3;
+    const int ANIM_PLAYER_SLIDE_SHOOT = 4;
     std::vector<Animation> playerAnims;
 
     // bullet
@@ -88,6 +90,10 @@ struct Resources
     SDL_Texture* texIdle;
     SDL_Texture* texRun;
     SDL_Texture* texSlide;
+    // player shooting
+    SDL_Texture* texShoot; // idle
+    SDL_Texture* texRunShoot;
+    SDL_Texture* texSlideShoot;
 
     // tiles
     SDL_Texture* texBrick;
@@ -108,6 +114,10 @@ struct Resources
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
         AutoRelease<SDL_Texture*> tex = {IMG_LoadTexture(state->renderer, filepath.c_str()), SDL_DestroyTexture};
+        if (tex == nullptr)
+        {
+            throw std::runtime_error("Failed to load " + std::string(filepath));
+        }
         SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
         textures.push_back(std::move(tex));
         return textures.back();
@@ -119,6 +129,8 @@ struct Resources
         playerAnims[ANIM_PLAYER_IDLE] = Animation{8, 1.6f};
         playerAnims[ANIM_PLAYER_RUNNING] = Animation{4, 0.5f};
         playerAnims[ANIM_PLAYER_SLIDE] = Animation{1, 1.0f};
+        playerAnims[ANIM_PLAYER_SHOOT] = Animation{4, 0.5f};
+        playerAnims[ANIM_PLAYER_SLIDE_SHOOT] = Animation{4, 0.5f};
 
         bulletAnims.resize(2);
         bulletAnims[ANIM_BULLET_MOVING] = Animation{4, 0.05f};
@@ -127,6 +139,9 @@ struct Resources
         texIdle = loadTexture(state, "data/idle.png");
         texRun = loadTexture(state, "data/run.png");
         texSlide = loadTexture(state, "data/slide.png");
+        texShoot = loadTexture(state, "data/shoot.png");
+        texRunShoot = loadTexture(state, "data/shoot_run.png");
+        texSlideShoot = loadTexture(state, "data/slide_shoot.png");
         texBrick = loadTexture(state, "data/tiles/brick.png");
         texGrass = loadTexture(state, "data/tiles/grass.png");
         texGround = loadTexture(state, "data/tiles/ground.png");
@@ -427,10 +442,14 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
 
         Timer& weaponTimer = obj.data.player.weaponTimer;
         weaponTimer.step(deltaTime);
-        const auto handleShooting = [&]()
+        const auto handleShooting = [&](SDL_Texture* tex, SDL_Texture* shootTex, int animIndex, int shootAnimIndex)
         {
             if (state->keys[SDL_SCANCODE_J])
             {
+                // set shooting tex/anim
+                obj.texture = shootTex;
+                obj.currentAnimation = shootAnimIndex;
+
                 if (weaponTimer.isTimeout())
                 {
                     weaponTimer.reset();
@@ -455,6 +474,11 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
 
                     gs->bullets.push_back(std::move(bullet));
                 }
+            }
+            else
+            {
+                obj.texture = tex;
+                obj.currentAnimation = animIndex;
             }
         };
 
@@ -483,9 +507,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                         }
                     }
                 }
-                handleShooting();
-                obj.texture = res->texIdle;
-                obj.currentAnimation = res->ANIM_PLAYER_IDLE;
+                handleShooting(res->texIdle, res->texShoot, res->ANIM_PLAYER_IDLE, res->ANIM_PLAYER_SHOOT);
                 break;
             }
         case PlayerState::running:
@@ -495,26 +517,25 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                     obj.data.player.state = PlayerState::idle;
                 }
 
-                handleShooting();
-
                 // moving in opposite direction of velocity, sliding! (changing direction during move)
                 if (obj.velocity.x * obj.direction < 0 && obj.grounded)
                 {
-                    obj.texture = res->texSlide;
-                    obj.currentAnimation = res->ANIM_PLAYER_SLIDE;
+                    handleShooting(res->texSlide, res->texSlideShoot, res->ANIM_PLAYER_SLIDE,
+                                   res->ANIM_PLAYER_SLIDE_SHOOT);
                 }
                 else
                 {
-                    obj.texture = res->texRun;
-                    obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
+                    // when running, use same index. Both texture have the same size, so, the Animation class
+                    // can use the same frameIndex when switching images
+                    handleShooting(res->texRun, res->texRunShoot, res->ANIM_PLAYER_RUNNING,
+                                   res->ANIM_PLAYER_RUNNING);
                 }
                 break;
             }
         case PlayerState::jumping:
             {
-                handleShooting();
-                obj.texture = res->texRun;
-                obj.currentAnimation = res->ANIM_PLAYER_RUNNING;
+                handleShooting(res->texRun, res->texRunShoot, res->ANIM_PLAYER_RUNNING,
+                               res->ANIM_PLAYER_RUNNING);
                 break;
             }
         default:
