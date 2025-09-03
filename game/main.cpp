@@ -441,7 +441,7 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float wid
 void update(const SDLState* state, GameState* gs, Resources* res, GameObject& obj, float deltaTime)
 {
     // apply some gravity
-    if (obj.dynamic)
+    if (obj.dynamic && !obj.grounded)
     {
         obj.velocity += glm::vec2(0, 500) * deltaTime;
     }
