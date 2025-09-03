@@ -33,4 +33,5 @@ float Timer::getLength() const
 void Timer::reset()
 {
     time = 0;
+    timeout = false;
 }
