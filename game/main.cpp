@@ -849,6 +849,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                 case 3: // enemy
                     {
                         GameObject enemy = createObject(r, c, res->texEnemy, ObjectType::enemy);
+                        enemy.data.enemy = EnemyData();
                         enemy.currentAnimation = res->ANIM_ENEMY;
                         enemy.animations = res->enemyAnims;
                         enemy.collider = {10, 4, 12, 28};

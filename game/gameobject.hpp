@@ -15,6 +15,11 @@ enum class BulletState
     moving, colliding, inactive
 };
 
+enum class EnemyState
+{
+    shambling, damaged, dead
+};
+
 struct PlayerData
 {
     PlayerState state = PlayerState::idle;
@@ -27,6 +32,7 @@ struct LevelData
 
 struct EnemyData
 {
+    EnemyState state = EnemyState::shambling;
 };
 
 struct BulletData
