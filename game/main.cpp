@@ -422,7 +422,10 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 
 void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float width, float height, float deltaTime)
 {
-    float srcX = obj.currentAnimation >= 0 ? obj.animations[obj.currentAnimation].currentFrame() * width : 0.0f;
+    // if currentAnimation == -1, draw the specific frame index spriteFrame
+    float srcX = obj.currentAnimation >= 0
+                     ? obj.animations[obj.currentAnimation].currentFrame() * width
+                     : (obj.spriteFrame - 1) * width;
 
     SDL_FRect src{.x = srcX, .y = 0, .w = width, .h = height};
     SDL_FRect dst{.x = obj.position.x - gs->mapViewport.x, .y = obj.position.y, .w = width, .h = height};
@@ -671,16 +674,28 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
     }
     else if (obj.type == ObjectType::enemy)
     {
-        switch (obj.data.enemy.state)
+        EnemyData& d = obj.data.enemy;
+        switch (d.state)
         {
         case EnemyState::damaged:
             {
                 // if damaged timer has finished, go back to shambling
-                if (obj.data.enemy.damagedTimer.step(deltaTime))
+                if (d.damagedTimer.step(deltaTime))
                 {
-                    obj.data.enemy.state = EnemyState::shambling;
+                    d.state = EnemyState::shambling;
                     obj.texture = res->texEnemy;
                     obj.currentAnimation = res->ANIM_ENEMY;
+                }
+                break;
+            }
+        case EnemyState::dead:
+            {
+                // when enemy is dead, make it draw only the last frame
+                if (obj.currentAnimation != -1 &&
+                    obj.animations[obj.currentAnimation].isDone())
+                {
+                    obj.currentAnimation = -1;
+                    obj.spriteFrame = 18;
                 }
                 break;
             }

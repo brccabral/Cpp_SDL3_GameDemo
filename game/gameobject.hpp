@@ -63,6 +63,7 @@ struct GameObject
     float direction = 1;
     float maxSpeedX = 0;
     std::vector<Animation> animations{};
+    // if currentAnimation == -1, will draw the spriteFrame index from object texture
     int currentAnimation = -1;
     SDL_Texture* texture = nullptr;
     bool dynamic{};
@@ -70,6 +71,8 @@ struct GameObject
     bool grounded{};
     Timer flashTimer{0.05f}; // object blink on hit
     bool shouldFlash{};
+    // index in texture to draw if currentAnimation == -1
+    int spriteFrame = 1;
 
     GameObject() = default;
     SDL_FRect GetCollider() const;
