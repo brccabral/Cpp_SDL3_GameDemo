@@ -367,7 +367,10 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
     for (auto& bullet : gs->bullets)
     {
-        drawObject(ss, gs, bullet, bullet.collider.w, bullet.collider.h, deltaTime);
+        if (bullet.data.bullet.state != BulletState::inactive)
+        {
+            drawObject(ss, gs, bullet, bullet.collider.w, bullet.collider.h, deltaTime);
+        }
     }
 
     // draw foreground tiles
