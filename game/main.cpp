@@ -672,6 +672,23 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             }
         }
     }
+    else if (obj.type == ObjectType::enemy)
+    {
+        switch (obj.data.enemy.state)
+        {
+        case EnemyState::damaged:
+            {
+                // if damaged timer has finished, go back to shambling
+                if (obj.data.enemy.damagedTimer.step(deltaTime))
+                {
+                    obj.data.enemy.state = EnemyState::shambling;
+                    obj.texture = res->texEnemy;
+                    obj.currentAnimation = res->ANIM_ENEMY;
+                }
+                break;
+            }
+        }
+    }
 
     // an object always need a direction
     if (currentDirection != 0)
@@ -710,7 +727,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
     }
 }
 
-void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FRect& rectA,
+void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, const SDL_FRect& rectA,
                        const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b,
                        float deltaTime, bool isHorizontal)
 {
@@ -776,6 +793,9 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                         b.direction = -a.direction;
                         b.shouldFlash = true;
                         b.flashTimer.reset();
+                        b.texture = res->texEnemyHit;
+                        b.currentAnimation = res->ANIM_ENEMY_HIT;
+                        b.data.enemy.state = EnemyState::damaged;
                         break;
                     }
                 }

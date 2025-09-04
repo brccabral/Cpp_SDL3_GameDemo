@@ -33,6 +33,7 @@ struct LevelData
 struct EnemyData
 {
     EnemyState state = EnemyState::shambling;
+    Timer damagedTimer{0.5f};
 };
 
 struct BulletData
@@ -67,7 +68,7 @@ struct GameObject
     SDL_FRect collider{};
     bool grounded{};
     Timer flashTimer{0.05f}; // object blink on hit
-    bool shouldFlash;
+    bool shouldFlash{};
 
     GameObject() = default;
     SDL_FRect GetCollider() const;
