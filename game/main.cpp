@@ -725,6 +725,9 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                 a.data.bullet.state = BulletState::colliding;
                 a.texture = res->texBulletHit;
                 a.currentAnimation = res->ANIM_BULLET_HIT;
+                // force velocity 0 bullet changes state on vertical and next frame genericResponse()
+                // is not called for horizontal because of change state
+                a.velocity *= 0;
                 break;
             }
         }
