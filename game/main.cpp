@@ -739,7 +739,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
     }
 }
 
-void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, const SDL_FRect& rectA,
+void collisionResponse(const SDLState* state, GameState* gs, Resources* res, const SDL_FRect& rectA,
                        const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b,
                        float deltaTime, bool isHorizontal)
 {
@@ -839,6 +839,10 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, const 
             }
         }
     }
+    else if (a.type == ObjectType::enemy)
+    {
+        genericResponse();
+    }
 }
 
 void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameObject& objA,
@@ -865,7 +869,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
      * 6 - Brick
      */
     short map[MAP_ROWS][MAP_COLS] = {
-        0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -940,6 +944,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                         enemy.currentAnimation = res->ANIM_ENEMY;
                         enemy.animations = res->enemyAnims;
                         enemy.collider = {10, 4, 12, 28};
+                        enemy.dynamic = true;
                         gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(enemy));
                         break;
                     }
