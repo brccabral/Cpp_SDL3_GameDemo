@@ -180,6 +180,7 @@ struct Resources
 
     Sound_ID music{};
     Sound_ID enemy_hit{};
+    Sound_ID enemy_die{};
     Sound_ID shoot{};
 
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
@@ -240,6 +241,7 @@ struct Resources
 
         music = loadAudio(state, "data/audio/Juhani Junkala [Retro Game Music Pack] Level 1.mp3", -1);
         enemy_hit = loadAudio(state, "data/audio/enemy_hit.wav", 0);
+        enemy_die = loadAudio(state, "data/audio/monster_die.wav", 0);
         shoot = loadAudio(state, "data/audio/shoot.wav", 0);
     }
 
@@ -954,6 +956,11 @@ void collisionResponse(const SDLState* state, GameState* gs, Resources* res, con
                             d.state = EnemyState::dead;
                             b.texture = res->texEnemyDie;
                             b.currentAnimation = res->ANIM_ENEMY_DIE;
+                            res->playSound(res->enemy_die);
+                        }
+                        else
+                        {
+                            res->playSound(res->enemy_hit);
                         }
                         bulletResponse();
                         break;
