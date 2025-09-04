@@ -34,7 +34,7 @@ struct std::formatter<glm::vec2>
 
 typedef struct SDLState
 {
-    AutoRelease<int> sdl_init;
+    AutoRelease<bool> sdl_init;
     AutoRelease<SDL_Window*> window;
     AutoRelease<SDL_Renderer*> renderer;
     int width, height;
