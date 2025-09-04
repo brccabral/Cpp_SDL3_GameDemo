@@ -73,6 +73,7 @@ struct GameState
 
 struct Resources
 {
+    // player
     const int ANIM_PLAYER_IDLE = 0;
     const int ANIM_PLAYER_RUNNING = 1;
     const int ANIM_PLAYER_SLIDE = 2;
@@ -84,6 +85,12 @@ struct Resources
     const int ANIM_BULLET_MOVING = 0;
     const int ANIM_BULLET_HIT = 1;
     std::vector<Animation> bulletAnims;
+
+    // enemy
+    const int ANIM_ENEMY = 0;
+    const int ANIM_ENEMY_HIT = 1;
+    const int ANIM_ENEMY_DIE = 2;
+    std::vector<Animation> enemyAnims;
 
     std::vector<AutoRelease<SDL_Texture*>> textures;
 
@@ -112,6 +119,11 @@ struct Resources
     SDL_Texture* texBullet;
     SDL_Texture* texBulletHit;
 
+    // enemy
+    SDL_Texture* texEnemy;
+    SDL_Texture* texEnemyHit;
+    SDL_Texture* texEnemyDie;
+
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
         AutoRelease<SDL_Texture*> tex = {IMG_LoadTexture(state->renderer, filepath.c_str()), SDL_DestroyTexture};
@@ -137,6 +149,11 @@ struct Resources
         bulletAnims[ANIM_BULLET_MOVING] = Animation{4, 0.05f};
         bulletAnims[ANIM_BULLET_HIT] = Animation{4, 0.15f};
 
+        enemyAnims.resize(3);
+        enemyAnims[ANIM_ENEMY] = Animation{8, 1.0f};
+        enemyAnims[ANIM_ENEMY_HIT] = Animation{8, 1.0f};
+        enemyAnims[ANIM_ENEMY_DIE] = Animation{18, 2.0f};
+
         texIdle = loadTexture(state, "data/idle.png");
         texRun = loadTexture(state, "data/run.png");
         texSlide = loadTexture(state, "data/slide.png");
@@ -153,6 +170,9 @@ struct Resources
         texBg4 = loadTexture(state, "data/bg/bg_layer4.png");
         texBullet = loadTexture(state, "data/bullet.png");
         texBulletHit = loadTexture(state, "data/bullet_hit.png");
+        texEnemy = loadTexture(state, "data/enemy.png");
+        texEnemyHit = loadTexture(state, "data/enemy_hit.png");
+        texEnemyDie = loadTexture(state, "data/enemy_die.png");
     }
 
     ~Resources() = default;
@@ -824,6 +844,15 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                     {
                         GameObject panel = createObject(r, c, res->texPanel, ObjectType::level);
                         gs->layers[LAYER_IDX_LEVEL].push_back(std::move(panel));
+                        break;
+                    }
+                case 3: // enemy
+                    {
+                        GameObject enemy = createObject(r, c, res->texEnemy, ObjectType::enemy);
+                        enemy.currentAnimation = res->ANIM_ENEMY;
+                        enemy.animations = res->enemyAnims;
+                        enemy.collider = {10, 4, 12, 28};
+                        gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(enemy));
                         break;
                     }
                 case 4: // player
