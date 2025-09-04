@@ -436,8 +436,26 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float wid
     SDL_FRect dst{.x = obj.position.x - gs->mapViewport.x, .y = obj.position.y, .w = width, .h = height};
 
     SDL_FlipMode flipMode = obj.direction < 0 ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-    SDL_RenderTextureRotated(state->renderer, obj.texture, &src, &dst, 0, nullptr,
-                             flipMode);
+
+    if (!obj.shouldFlash)
+    {
+        SDL_RenderTextureRotated(state->renderer, obj.texture, &src, &dst, 0, nullptr,
+                                 flipMode);
+    }
+    else
+    {
+        // flash object with a red-ish tint
+        SDL_SetTextureColorModFloat(obj.texture, 2.5f, 1.0f, 1.0f);
+        SDL_RenderTextureRotated(state->renderer, obj.texture, &src, &dst, 0, nullptr,
+                                 flipMode);
+        SDL_SetTextureColorModFloat(obj.texture, 1.5f, 1.0f, 1.0f);
+
+        // check if timer has finished
+        if (obj.flashTimer.step(deltaTime))
+        {
+            obj.shouldFlash = false;
+        }
+    }
 
     if (gs->debugMode)
     {
@@ -756,6 +774,8 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                 case ObjectType::enemy:
                     {
                         b.direction = -a.direction;
+                        b.shouldFlash = true;
+                        b.flashTimer.reset();
                         break;
                     }
                 }

@@ -10,7 +10,7 @@ int Animation::currentFrame() const
     return static_cast<int>(timer.getTime() / timer.getLength() * frameCount);
 }
 
-void Animation::step(const float deltaTime)
+bool Animation::step(const float deltaTime)
 {
     return timer.step(deltaTime);
 }

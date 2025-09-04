@@ -15,6 +15,7 @@ public:
 
     [[nodiscard]] float getLength() const;
     [[nodiscard]] int currentFrame() const;
-    void step(float deltaTime);
+    // returns true if timer has completed
+    bool step(float deltaTime);
     [[nodiscard]] bool isDone() const;
 };

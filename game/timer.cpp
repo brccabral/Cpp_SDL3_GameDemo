@@ -5,14 +5,16 @@ Timer::Timer(const float length)
 {
 }
 
-void Timer::step(const float deltaTime)
+bool Timer::step(const float deltaTime)
 {
     time += deltaTime;
     if (time >= length)
     {
         time -= length;
         timeout = true;
+        return true;
     }
+    return false;
 }
 
 bool Timer::isTimeout() const

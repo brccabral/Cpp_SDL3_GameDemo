@@ -66,6 +66,8 @@ struct GameObject
     bool dynamic{};
     SDL_FRect collider{};
     bool grounded{};
+    Timer flashTimer{0.05f}; // object blink on hit
+    bool shouldFlash;
 
     GameObject() = default;
     SDL_FRect GetCollider() const;
