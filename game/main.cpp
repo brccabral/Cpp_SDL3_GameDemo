@@ -200,7 +200,6 @@ void checkCollision(const SDLState* state, GameState* gs, Resources* res, GameOb
 void collisionResponse(const SDLState* state, GameState* gs, Resources* res, const SDL_FRect& rectA,
                        const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b,
                        float deltaTime, bool isHorizontal);
-void handleKeyInput(const SDLState* state, GameState* gs, GameObject& obj, SDL_Scancode key, bool keyDown);
 void drawParalaxBackground(SDL_Renderer* renderer, SDL_Texture* texture, float xVelocity, float& scrollPos,
                            float scrollFactor, float deltaTime);
 
@@ -297,14 +296,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
             ss->height = event->window.data2;
             break;
         }
-    case SDL_EVENT_KEY_DOWN:
-        {
-            handleKeyInput(ss, gs, gs->player(), event->key.scancode, true);
-            break;
-        }
     case SDL_EVENT_KEY_UP:
         {
-            handleKeyInput(ss, gs, gs->player(), event->key.scancode, false);
             if (event->key.scancode == SDL_SCANCODE_F12)
             {
                 gs->debugMode = !gs->debugMode;
@@ -493,6 +486,17 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             currentDirection += 1;
         }
 
+        const auto handleJump = [&]()
+        {
+            const float JUMP_FORCE = -200.0f;
+            if (state->keys[SDL_SCANCODE_K] && obj.grounded)
+            {
+                obj.velocity.y += JUMP_FORCE;
+                obj.data.player.state = PlayerState::jumping;
+                obj.grounded = false;
+            }
+        };
+
         Timer& weaponTimer = obj.data.player.weaponTimer;
         weaponTimer.step(deltaTime);
         const auto handleShooting = [&](SDL_Texture* tex, SDL_Texture* shootTex, int animIndex, int shootAnimIndex)
@@ -580,6 +584,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                         }
                     }
                 }
+                handleJump();
                 handleShooting(res->texIdle, res->texShoot, res->ANIM_PLAYER_IDLE, res->ANIM_PLAYER_SHOOT);
                 break;
             }
@@ -589,6 +594,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 {
                     obj.data.player.state = PlayerState::idle;
                 }
+                handleJump();
 
                 // moving in opposite direction of velocity, sliding! (changing direction during move)
                 if (obj.velocity.x * obj.direction < 0 && obj.grounded)
@@ -907,42 +913,6 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
     loadMap(foreground);
 
     assert(gs->playerIndex != -1);
-}
-
-void handleKeyInput(const SDLState* state, GameState* gs, GameObject& obj, SDL_Scancode key, bool keyDown)
-{
-    const float JUMP_FORCE = -200.0f;
-    if (obj.type != ObjectType::player)
-    {
-        return;
-    }
-    switch (obj.data.player.state)
-    {
-    case PlayerState::idle:
-        {
-            if (key == SDL_SCANCODE_K && keyDown && obj.grounded)
-            {
-                obj.velocity.y += JUMP_FORCE;
-                obj.data.player.state = PlayerState::jumping;
-                obj.grounded = false;
-            }
-            break;
-        }
-    case PlayerState::running:
-        {
-            if (key == SDL_SCANCODE_K && keyDown && obj.grounded)
-            {
-                obj.velocity.y += JUMP_FORCE;
-                obj.data.player.state = PlayerState::jumping;
-                obj.grounded = false;
-            }
-            break;
-        }
-    default:
-        {
-            break;
-        }
-    }
 }
 
 void drawParalaxBackground(SDL_Renderer* renderer, SDL_Texture* texture, float xVelocity, float& scrollPos,
