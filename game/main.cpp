@@ -666,6 +666,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                     {
                         gs->bullets.push_back(std::move(bullet));
                     }
+                    res->playSound(res->shoot);
                 }
             }
             else
