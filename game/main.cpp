@@ -593,13 +593,20 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
     }
     else if (obj.type == ObjectType::bullet)
     {
-        if (obj.position.x - gs->mapViewport.x < 0 ||
-            obj.position.x - gs->mapViewport.x > state->logW ||
-            obj.position.y - gs->mapViewport.y < 0 ||
-            obj.position.y - gs->mapViewport.y > state->logH
-        )
+        switch (obj.data.bullet.state)
         {
-            obj.data.bullet.state = BulletState::inactive;
+        case BulletState::moving:
+            {
+                if (obj.position.x - gs->mapViewport.x < 0 ||
+                    obj.position.x - gs->mapViewport.x > state->logW ||
+                    obj.position.y - gs->mapViewport.y < 0 ||
+                    obj.position.y - gs->mapViewport.y > state->logH
+                )
+                {
+                    obj.data.bullet.state = BulletState::inactive;
+                }
+                break;
+            }
         }
     }
 
