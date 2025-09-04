@@ -607,6 +607,14 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                 }
                 break;
             }
+        case BulletState::colliding:
+            {
+                if (obj.animations[obj.currentAnimation].isDone())
+                {
+                    obj.data.bullet.state = BulletState::inactive;
+                }
+                break;
+            }
         }
     }
 

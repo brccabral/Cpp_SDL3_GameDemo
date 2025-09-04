@@ -14,3 +14,8 @@ void Animation::step(const float deltaTime)
 {
     return timer.step(deltaTime);
 }
+
+bool Animation::isDone() const
+{
+    return timer.isTimeout();
+}
