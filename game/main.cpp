@@ -677,6 +677,21 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
         EnemyData& d = obj.data.enemy;
         switch (d.state)
         {
+        case EnemyState::shambling:
+            {
+                glm::vec2 playerDir = gs->player().position - obj.position;
+                if (glm::length(playerDir) < 100)
+                {
+                    currentDirection = playerDir.x > 0 ? 1 : -1;
+                    obj.acceleration = glm::vec2(30, 0);
+                }
+                else
+                {
+                    obj.acceleration = glm::vec2{0};
+                    obj.velocity.x = 0;
+                }
+                break;
+            }
         case EnemyState::damaged:
             {
                 // if damaged timer has finished, go back to shambling
@@ -690,6 +705,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
             }
         case EnemyState::dead:
             {
+                obj.velocity.x = 0;
                 // when enemy is dead, make it draw only the last frame
                 if (obj.currentAnimation != -1 &&
                     obj.animations[obj.currentAnimation].isDone())
@@ -945,6 +961,7 @@ void createTiles(const SDLState* state, GameState* gs, Resources* res)
                         enemy.animations = res->enemyAnims;
                         enemy.collider = {10, 4, 12, 28};
                         enemy.dynamic = true;
+                        enemy.maxSpeedX = 15;
                         gs->layers[LAYER_IDX_CHARACTERS].push_back(std::move(enemy));
                         break;
                     }
