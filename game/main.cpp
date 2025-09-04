@@ -402,6 +402,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
             {
                 gs->debugMode = !gs->debugMode;
             }
+            if (event->key.scancode == SDL_SCANCODE_F11)
+            {
+                ss->fullscreen = !ss->fullscreen;
+                SDL_SetWindowFullscreen(ss->window, ss->fullscreen);
+            }
             break;
         }
     default:
