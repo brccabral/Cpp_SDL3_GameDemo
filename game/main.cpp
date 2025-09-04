@@ -352,20 +352,12 @@ SDL_AppResult SDL_AppIterate(void* appstate)
         for (auto& obj : layer)
         {
             update(ss, gs, res, obj, deltaTime);
-            if (obj.currentAnimation >= 0)
-            {
-                obj.animations[obj.currentAnimation].step(deltaTime);
-            }
         }
     }
 
     for (auto& bullet : gs->bullets)
     {
         update(ss, gs, res, bullet, deltaTime);
-        if (bullet.currentAnimation >= 0)
-        {
-            bullet.animations[bullet.currentAnimation].step(deltaTime);
-        }
     }
 
 
@@ -486,6 +478,11 @@ void drawObject(const SDLState* state, GameState* gs, GameObject& obj, float wid
 
 void update(const SDLState* state, GameState* gs, Resources* res, GameObject& obj, float deltaTime)
 {
+    if (obj.currentAnimation >= 0)
+    {
+        obj.animations[obj.currentAnimation].step(deltaTime);
+    }
+
     // apply some gravity
     if (obj.dynamic)
     {
