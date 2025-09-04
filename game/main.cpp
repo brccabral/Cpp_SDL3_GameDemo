@@ -802,6 +802,15 @@ void collisionResponse(const SDLState* state, GameState* gs, Resources* res, con
                 genericResponse();
                 break;
             }
+        case ObjectType::enemy:
+            {
+                // bounce player if collides with enemy
+                if (b.data.enemy.state != EnemyState::dead)
+                {
+                    a.velocity = glm::vec2(100, 0) * -a.direction;
+                }
+                break;
+            }
         }
     }
     else if (a.type == ObjectType::bullet)
@@ -858,6 +867,14 @@ void collisionResponse(const SDLState* state, GameState* gs, Resources* res, con
     else if (a.type == ObjectType::enemy)
     {
         genericResponse();
+        if (b.type == ObjectType::player)
+        {
+            // bounce player if collides with enemy
+            if (a.data.enemy.state != EnemyState::dead)
+            {
+                b.velocity = glm::vec2(100, 0) * -b.direction;
+            }
+        }
     }
 }
 
