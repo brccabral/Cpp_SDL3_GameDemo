@@ -34,6 +34,7 @@ struct EnemyData
 {
     EnemyState state = EnemyState::shambling;
     Timer damagedTimer{0.5f};
+    int healthPoints{100};
 };
 
 struct BulletData

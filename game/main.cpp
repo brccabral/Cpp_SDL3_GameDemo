@@ -782,30 +782,47 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, const 
         {
         case BulletState::moving:
             {
+                const auto bulletResponse = [&]()
+                {
+                    genericResponse();
+                    a.data.bullet.state = BulletState::colliding;
+                    a.texture = res->texBulletHit;
+                    a.currentAnimation = res->ANIM_BULLET_HIT;
+                    // force velocity 0 bullet changes state on vertical and next frame genericResponse()
+                    // is not called for horizontal because of change state
+                    a.velocity *= 0;
+                };
                 switch (b.type)
                 {
                 case ObjectType::level:
                     {
+                        bulletResponse();
                         break;
                     }
                 case ObjectType::enemy:
                     {
+                        EnemyData& d = b.data.enemy;
+                        if (d.state == EnemyState::dead)
+                        {
+                            break;
+                        }
                         b.direction = -a.direction;
                         b.shouldFlash = true;
                         b.flashTimer.reset();
                         b.texture = res->texEnemyHit;
                         b.currentAnimation = res->ANIM_ENEMY_HIT;
-                        b.data.enemy.state = EnemyState::damaged;
+                        d.state = EnemyState::damaged;
+                        d.healthPoints -= 10;
+                        if (d.healthPoints <= 0)
+                        {
+                            d.state = EnemyState::dead;
+                            b.texture = res->texEnemyDie;
+                            b.currentAnimation = res->ANIM_ENEMY_DIE;
+                        }
+                        bulletResponse();
                         break;
                     }
                 }
-                genericResponse();
-                a.data.bullet.state = BulletState::colliding;
-                a.texture = res->texBulletHit;
-                a.currentAnimation = res->ANIM_BULLET_HIT;
-                // force velocity 0 bullet changes state on vertical and next frame genericResponse()
-                // is not called for horizontal because of change state
-                a.velocity *= 0;
                 break;
             }
         }
