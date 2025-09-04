@@ -721,6 +721,9 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
         case BulletState::moving:
             {
                 genericResponse();
+                a.data.bullet.state = BulletState::colliding;
+                a.texture = res->texBulletHit;
+                a.currentAnimation = res->ANIM_BULLET_HIT;
                 break;
             }
         }
