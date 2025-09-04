@@ -485,6 +485,7 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                     weaponTimer.reset();
                     GameObject bullet;
                     bullet.type = ObjectType::bullet;
+                    bullet.data.bullet = BulletData();
                     bullet.direction = gs->player().direction;
                     bullet.texture = res->texBullet;
                     bullet.currentAnimation = res->ANIM_BULLET_MOVING;
@@ -673,38 +674,53 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
                        const SDL_FRect& rectB, const SDL_FRect& rectC, GameObject& a, GameObject& b, float deltaTime,
                        bool isHorizontal)
 {
+    const auto genericResponse = [&]()
+    {
+        if (isHorizontal) // horizontal collision
+        {
+            if (a.velocity.x > 0) // going right
+            {
+                a.position.x = rectB.x - a.collider.w - a.collider.x;
+                a.velocity.x = 0;
+            }
+            else if (a.velocity.x < 0)
+            {
+                a.position.x = rectB.x + rectB.w - a.collider.x;
+                a.velocity.x = 0;
+            }
+        }
+        else if (!isHorizontal) // vertical
+        {
+            if (a.velocity.y > 0) // going down
+            {
+                a.position.y = rectB.y - a.collider.h - a.collider.y;
+                a.velocity.y = 0;
+            }
+            else if (a.velocity.y < 0)
+            {
+                a.position.y = rectB.y + rectB.h - a.collider.y;
+                a.velocity.y = 0;
+            }
+        }
+    };
     if (a.type == ObjectType::player)
     {
         switch (b.type)
         {
         case ObjectType::level:
             {
-                if (isHorizontal) // horizontal collision
-                {
-                    if (a.velocity.x > 0) // going right
-                    {
-                        a.position.x = rectB.x - a.collider.w - a.collider.x;
-                        a.velocity.x = 0;
-                    }
-                    else if (a.velocity.x < 0)
-                    {
-                        a.position.x = rectB.x + rectB.w - a.collider.x;
-                        a.velocity.x = 0;
-                    }
-                }
-                else if (!isHorizontal) // vertical
-                {
-                    if (a.velocity.y > 0) // going down
-                    {
-                        a.position.y = rectB.y - a.collider.h - a.collider.y;
-                        a.velocity.y = 0;
-                    }
-                    else if (a.velocity.y < 0)
-                    {
-                        a.position.y = rectB.y + rectB.h - a.collider.y;
-                        a.velocity.y = 0;
-                    }
-                }
+                genericResponse();
+                break;
+            }
+        }
+    }
+    else if (a.type == ObjectType::bullet)
+    {
+        switch (a.data.bullet.state)
+        {
+        case BulletState::moving:
+            {
+                genericResponse();
                 break;
             }
         }
