@@ -353,7 +353,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     }
 
     res->load(ss);
-    res->setSoundGain(res->music, 0.5f);
+    res->setSoundGain(res->music, 0.333f);
     if (!res->playSound(res->music))
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), ss->window);
