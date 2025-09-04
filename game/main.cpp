@@ -741,6 +741,18 @@ void collisionResponse(const SDLState* ss, GameState* gs, Resources* res, SDL_FR
         {
         case BulletState::moving:
             {
+                switch (b.type)
+                {
+                case ObjectType::level:
+                    {
+                        break;
+                    }
+                case ObjectType::enemy:
+                    {
+                        b.direction = -a.direction;
+                        break;
+                    }
+                }
                 genericResponse();
                 a.data.bullet.state = BulletState::colliding;
                 a.texture = res->texBulletHit;
