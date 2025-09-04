@@ -495,7 +495,10 @@ void update(const SDLState* state, GameState* gs, Resources* res, GameObject& ob
                     bullet.collider = {
                         0, 0, static_cast<float>(res->texBullet->h), static_cast<float>(res->texBullet->h)
                     };
-                    bullet.velocity = glm::vec2(obj.velocity.x + 600.0f * obj.direction, 0);
+                    // bullets have random Y velocity
+                    constexpr Sint32 yVariation = 40.f;
+                    const Sint32 yVel = SDL_rand(yVariation) - yVariation / 2;
+                    bullet.velocity = glm::vec2(obj.velocity.x + 600.0f * obj.direction, yVel);
                     bullet.animations = res->bulletAnims;
                     bullet.maxSpeedX = 1000.0f;
 
