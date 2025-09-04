@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_mixer/SDL_mixer.h>
 #include <autorelease/AutoRelease.hpp>
 
 #include "gameobject.hpp"
@@ -37,6 +38,8 @@ typedef struct SDLState
     AutoRelease<bool> sdl_init;
     AutoRelease<SDL_Window*> window;
     AutoRelease<SDL_Renderer*> renderer;
+    AutoRelease<bool> mix_init;
+    AutoRelease<MIX_Mixer*> mixer;
     int width, height;
     int logW, logH; // logical width/height
     const bool* keys;
@@ -69,6 +72,52 @@ struct GameState
     };
 
     GameObject& player() { return layers[LAYER_IDX_CHARACTERS][playerIndex]; }
+};
+
+struct Sound
+{
+    AutoRelease<MIX_Audio*> audio;
+    AutoRelease<MIX_Track*> track;
+    AutoRelease<SDL_PropertiesID> options;
+
+    Sound(MIX_Mixer* mixer, const std::string& filepath, int loops)
+    {
+        audio = {MIX_LoadAudio(mixer, filepath.c_str(), false), MIX_DestroyAudio};
+        if (!audio)
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
+            throw std::runtime_error("Error");
+        }
+        track = {MIX_CreateTrack(mixer), MIX_DestroyTrack};
+        if (!track)
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
+            throw std::runtime_error("Error");
+        }
+        if (!MIX_SetTrackAudio(track, audio))
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
+            throw std::runtime_error("Error");
+        }
+
+        options = {SDL_CreateProperties(), SDL_DestroyProperties};
+        if (!options)
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
+            throw std::runtime_error("Error");
+        }
+        SDL_SetNumberProperty(options, MIX_PROP_PLAY_LOOPS_NUMBER, loops);
+    }
+
+    bool play() const
+    {
+        return MIX_PlayTrack(track, options);
+    }
+
+    bool setGain(const float gain) const
+    {
+        return MIX_SetTrackGain(track, gain);
+    }
 };
 
 struct Resources
@@ -124,6 +173,15 @@ struct Resources
     SDL_Texture* texEnemyHit;
     SDL_Texture* texEnemyDie;
 
+    // Audio
+    std::vector<Sound> sounds;
+
+    typedef size_t Sound_ID;
+
+    Sound_ID music{};
+    Sound_ID enemy_hit{};
+    Sound_ID shoot{};
+
     SDL_Texture* loadTexture(SDLState* state, const std::string& filepath)
     {
         AutoRelease<SDL_Texture*> tex = {IMG_LoadTexture(state->renderer, filepath.c_str()), SDL_DestroyTexture};
@@ -134,6 +192,12 @@ struct Resources
         SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
         textures.push_back(std::move(tex));
         return textures.back();
+    }
+
+    Sound_ID loadAudio(SDLState* state, const std::string& filepath, int loops)
+    {
+        sounds.emplace_back(state->mixer, filepath, loops);
+        return sounds.size() - 1;
     }
 
     void load(SDLState* state)
@@ -173,6 +237,20 @@ struct Resources
         texEnemy = loadTexture(state, "data/enemy.png");
         texEnemyHit = loadTexture(state, "data/enemy_hit.png");
         texEnemyDie = loadTexture(state, "data/enemy_die.png");
+
+        music = loadAudio(state, "data/audio/Juhani Junkala [Retro Game Music Pack] Level 1.mp3", -1);
+        enemy_hit = loadAudio(state, "data/audio/enemy_hit.wav", 0);
+        shoot = loadAudio(state, "data/audio/shoot.wav", 0);
+    }
+
+    bool playSound(const Sound_ID sound_id) const
+    {
+        return sounds.at(sound_id).play();
+    }
+
+    bool setSoundGain(const Sound_ID sound_id, const float gain) const
+    {
+        return sounds.at(sound_id).setGain(gain);
     }
 
     ~Resources() = default;
@@ -258,7 +336,27 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
     ss->keys = SDL_GetKeyboardState(nullptr);
 
+    // Mixer
+    ss->mix_init = {MIX_Init(), [](const bool&) { MIX_Quit(); }};
+    if (!ss->mix_init)
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
+        return SDL_APP_FAILURE;
+    }
+    ss->mixer = {MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr), MIX_DestroyMixer};
+    if (!ss->mixer)
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), nullptr);
+        return SDL_APP_FAILURE;
+    }
+
     res->load(ss);
+    res->setSoundGain(res->music, 0.5f);
+    if (!res->playSound(res->music))
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), ss->window);
+        return SDL_APP_FAILURE;
+    }
 
     GameState* gs = new GameState(ss);
     createTiles(ss, gs, res);

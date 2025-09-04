@@ -5,6 +5,7 @@ include(GNUInstallDirs)
 
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
+find_package(SDL3_mixer REQUIRED)
 find_package(glm REQUIRED)
 find_package(autorelease REQUIRED)
 
