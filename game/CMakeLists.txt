@@ -17,9 +17,19 @@ target_link_libraries(sdl3-demo PRIVATE
                       tinyxml2::tinyxml2
 )
 
-add_custom_command(TARGET sdl3-demo
-                   POST_BUILD
+set(DATA_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data")
+set(DATA_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+file(GLOB_RECURSE DATA_FILES "${DATA_SOURCE_DIR}/*")
+
+add_custom_command(OUTPUT "${DATA_DEST_DIR}/.touch"
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                   ${CMAKE_CURRENT_SOURCE_DIR}/data
-                   ${CMAKE_CURRENT_BINARY_DIR}/data
+                   "${DATA_SOURCE_DIR}"
+                   "${DATA_DEST_DIR}"
+                   COMMAND ${CMAKE_COMMAND} -E touch "${DATA_DEST_DIR}/.touch"
+                   DEPENDS ${DATA_FILES}
 )
+add_custom_target(copy_data
+                  DEPENDS "${DATA_DEST_DIR}/.touch"
+)
+add_dependencies(sdl3-demo copy_data)
