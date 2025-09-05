@@ -466,7 +466,10 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     {
         for (auto& obj : layer)
         {
-            update(ss, gs, res, obj, deltaTime);
+            if (obj.dynamic)
+            {
+                update(ss, gs, res, obj, deltaTime);
+            }
         }
     }
 
@@ -497,11 +500,13 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     {
         SDL_SetRenderDrawColor(ss->renderer, 255, 255, 255, 255);
         SDL_RenderDebugText(ss->renderer, 5, 5,
-                            std::format("S: {} B: {} G: {} D: {}",
+                            std::format("S: {} B: {} G: {} D: {} dt: {} FPS: {}",
                                         static_cast<int>(gs->player().data.player.state),
                                         gs->bullets.size(),
                                         gs->player().grounded,
-                                        gs->player().direction
+                                        gs->player().direction,
+                                        deltaTime,
+                                        1.0f / deltaTime
                             ).c_str()
         );
 
@@ -847,7 +852,7 @@ void update(const SDLState* state, GameState* gs, const Resources* res, GameObje
     {
         for (auto& objB : layer)
         {
-            if (&obj == &objB)
+            if (&obj == &objB || objB.collider.w == 0 || objB.collider.h == 0)
             {
                 continue;
             }
@@ -861,7 +866,7 @@ void update(const SDLState* state, GameState* gs, const Resources* res, GameObje
     {
         for (auto& objB : layer)
         {
-            if (&obj == &objB)
+            if (&obj == &objB || objB.collider.w == 0 || objB.collider.h == 0)
             {
                 continue;
             }
