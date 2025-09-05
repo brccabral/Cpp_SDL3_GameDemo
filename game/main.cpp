@@ -1,4 +1,5 @@
 #include <array>
+#include <filesystem>
 #include <print>
 #include <string>
 #include <vector>
@@ -10,6 +11,7 @@
 #include <autorelease/AutoRelease.hpp>
 
 #include "gameobject.hpp"
+#include "tmx.hpp"
 
 template <>
 struct std::formatter<SDL_FRect>
@@ -125,6 +127,12 @@ struct Sound
     }
 };
 
+struct TileSetTextures
+{
+    int firstgid;
+    std::vector<SDL_Texture*> textures;
+};
+
 struct Resources
 {
     // player
@@ -188,6 +196,10 @@ struct Resources
     Sound_ID enemy_die{};
     Sound_ID shoot{};
 
+    // Tiled map
+    std::unique_ptr<tmx::Map> map{};
+    std::vector<TileSetTextures> tileSetTextures{};
+
     SDL_Texture* loadTexture(SDL_Renderer* renderer, const std::string& filepath)
     {
         AutoRelease<SDL_Texture*> tex = {IMG_LoadTexture(renderer, filepath.c_str()), SDL_DestroyTexture};
@@ -249,6 +261,23 @@ struct Resources
         enemy_hit = loadAudio(state->mixer, "data/audio/enemy_hit.wav", 0);
         enemy_die = loadAudio(state->mixer, "data/audio/monster_die.wav", 0);
         shoot = loadAudio(state->mixer, "data/audio/shoot.wav", 0);
+
+        map = tmx::loadMap("data/maps/smallmap.tmx");
+        for (tmx::TileSet& tileSet : map->tileSets)
+        {
+            TileSetTextures tst;
+            tst.firstgid = tileSet.firstgid;
+            tst.textures.reserve(tileSet.tiles.size());
+
+            for (const tmx::Tile& tile : tileSet.tiles)
+            {
+                const std::string imagePath = "data/tiles" + std::filesystem::path(tile.image.source).filename().
+                    string();
+                tst.textures.push_back(loadTexture(state->renderer, imagePath));
+            }
+
+            tileSetTextures.push_back(std::move(tst));
+        }
     }
 
     bool playSound(const Sound_ID sound_id) const
