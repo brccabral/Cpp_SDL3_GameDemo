@@ -77,9 +77,9 @@ struct GameState
 
 struct Sound
 {
-    AutoRelease<MIX_Audio*> audio;
-    AutoRelease<MIX_Track*> track;
-    AutoRelease<SDL_PropertiesID> options;
+    AutoRelease<MIX_Audio*> audio{};
+    AutoRelease<MIX_Track*> track{};
+    AutoRelease<SDL_PropertiesID> options{};
 
     Sound(MIX_Mixer* mixer, const std::string& filepath, const int loops)
     {
@@ -175,7 +175,7 @@ struct Resources
     SDL_Texture* texEnemyDie{};
 
     // Audio
-    std::vector<Sound> sounds;
+    std::vector<Sound> sounds{};
 
     typedef size_t Sound_ID;
 
@@ -240,6 +240,7 @@ struct Resources
         texEnemyHit = loadTexture(state->renderer, "data/enemy_hit.png");
         texEnemyDie = loadTexture(state->renderer, "data/enemy_die.png");
 
+        sounds.reserve(4);
         music = loadAudio(state->mixer, "data/audio/Juhani Junkala [Retro Game Music Pack] Level 1.mp3", -1);
         enemy_hit = loadAudio(state->mixer, "data/audio/enemy_hit.wav", 0);
         enemy_die = loadAudio(state->mixer, "data/audio/monster_die.wav", 0);
