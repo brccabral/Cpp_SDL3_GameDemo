@@ -20,4 +20,8 @@ Get it here [AutoRelease](https://github.com/brccabral/Cpp_AutoRelease)
 
 ## glm
 
-Get it here [glm](https://github.com/g-truc/glm)  
+Get it here [glm](https://github.com/g-truc/glm)
+
+## tinyXML-2
+
+Get it here [tinyXML-2](https://github.com/leethomason/tinyxml2)
