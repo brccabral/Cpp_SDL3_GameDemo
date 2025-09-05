@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <print>
@@ -267,9 +268,9 @@ struct Resources
             tst.firstgid = tileSet.firstgid;
             tst.textures.reserve(tileSet.tiles.size());
 
-            for (const tmx::Tile& tile : tileSet.tiles)
+            for (const auto& [id, image] : tileSet.tiles)
             {
-                const std::string imagePath = "data/tiles/" + std::filesystem::path(tile.image.source).filename().
+                const std::string imagePath = "data/tiles/" + std::filesystem::path(image.source).filename().
                     string();
                 tst.textures.push_back(loadTexture(state->renderer, imagePath));
             }
@@ -1053,16 +1054,18 @@ void createTiles(const SDLState* state, GameState* gs, const Resources* res)
                         continue;
                     }
                     // find the texture for that id
-                    const auto itr = std::find_if(res->tileSetTextures.begin(), res->tileSetTextures.end(),
-                                                  [tGid](const TileSetTextures& res_tst)
-                                                  {
-                                                      return tGid >= res_tst.firstgid && tGid < res_tst.firstgid +
-                                                          res_tst.textures.
-                                                                  size();
-                                                  }
+                    const auto itr = std::ranges::find_if(res->tileSetTextures.begin(), res->tileSetTextures.end(),
+                                                          [tGid](const TileSetTextures& res_tst)
+                                                          {
+                                                              return tGid >= res_tst.firstgid && tGid < res_tst.firstgid
+                                                                  +
+                                                                  res_tst.textures.
+                                                                          size();
+                                                          }
                     );
-                    const TileSetTextures& tst = *itr;
-                    SDL_Texture* tex = tst.textures[tGid - tst.firstgid];
+                    assert(itr != res->tileSetTextures.end());
+                    const auto& [firstgid, textures] = *itr;
+                    SDL_Texture* tex = textures[tGid - firstgid];
 
                     auto tile = createObject(r, c, tex, ObjectType::level);
                     if (layer.name != "Level") // foreground/background
