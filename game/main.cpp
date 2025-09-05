@@ -67,10 +67,14 @@ struct GameState
     float bg2Scroll{}, bg3Scroll{}, bg4Scroll{};
     bool debugMode{};
 
-    explicit GameState(const SDLState* ss)
+    GameState() : GameState(640, 480)
     {
-        mapViewport = {0, 0, static_cast<float>(ss->logW), static_cast<float>(ss->logH)};
-    };
+    }
+
+    explicit GameState(const float viewPortWidth, const float viewPortHeight)
+    {
+        mapViewport = {0, 0, viewPortWidth, viewPortHeight};
+    }
 
     GameObject& player() { return layers[LAYER_IDX_CHARACTERS][playerIndex]; }
 };
@@ -262,16 +266,9 @@ struct Resources
 
 typedef struct AppState
 {
-    SDLState* sdlState{};
-    GameState* gameState{};
-    Resources* resources{};
-
-    ~AppState()
-    {
-        delete sdlState;
-        delete gameState;
-        delete resources;
-    };
+    SDLState sdlState{};
+    GameState gameState{};
+    Resources resources{};
 } AppState;
 
 void drawObject(const SDLState* state, const GameState* gs, GameObject& obj, float width, float height,
@@ -301,8 +298,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     auto* as = new(raw) AppState();
 
     *appstate = as;
-    auto* ss = new SDLState();
-    auto* res = new Resources();
+    auto* ss = &as->sdlState;
+    auto* res = &as->resources;
 
     ss->sdl_init = {SDL_Init(SDL_INIT_VIDEO), [](const int&) { SDL_Quit(); }};
     if (!ss->sdl_init)
@@ -360,7 +357,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
-    auto* gs = new GameState(ss);
+    auto* gs = &as->gameState;
+    *gs = GameState(ss->logW, ss->logH);
     createTiles(ss, gs, res);
 
     // force double buffer allocate memory
@@ -370,10 +368,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     SDL_RenderClear(ss->renderer);
     SDL_RenderPresent(ss->renderer);
 
-    as->sdlState = ss;
-    as->resources = res;
-    as->gameState = gs;
-
     // getTicks() start with SDL_Init, but we spent time loading resources, so, getTicks() before first deltaTime
     ss->prevTime = SDL_GetTicks();
     return SDL_APP_CONTINUE;
@@ -381,8 +375,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
-    auto* ss = ((AppState*)appstate)->sdlState;
-    auto* gs = ((AppState*)appstate)->gameState;
+    auto* ss = &((AppState*)appstate)->sdlState;
+    auto* gs = &((AppState*)appstate)->gameState;
 
     switch (event->type)
     {
@@ -420,9 +414,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-    auto* ss = ((AppState*)appstate)->sdlState;
-    auto* gs = ((AppState*)appstate)->gameState;
-    const auto* res = ((AppState*)appstate)->resources;
+    auto* ss = &((AppState*)appstate)->sdlState;
+    auto* gs = &((AppState*)appstate)->gameState;
+    const auto* res = &((AppState*)appstate)->resources;
 
     const uint64_t nowTime = SDL_GetTicks();
     const float deltaTime = (float)(nowTime - ss->prevTime) / 1000.0f;
