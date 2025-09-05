@@ -18,7 +18,7 @@ target_link_libraries(sdl3-demo PRIVATE
 )
 
 add_custom_command(TARGET sdl3-demo
-                   PRE_BUILD
+                   POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_CURRENT_SOURCE_DIR}/data
                    ${CMAKE_CURRENT_BINARY_DIR}/data

@@ -10,7 +10,7 @@ namespace tmx
     {
         int id;
         std::string name;
-        std::vector<int> data;
+        std::vector<int> data; // CSV
     };
 
     struct LayerObject

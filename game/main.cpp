@@ -271,7 +271,7 @@ struct Resources
 
             for (const tmx::Tile& tile : tileSet.tiles)
             {
-                const std::string imagePath = "data/tiles" + std::filesystem::path(tile.image.source).filename().
+                const std::string imagePath = "data/tiles/" + std::filesystem::path(tile.image.source).filename().
                     string();
                 tst.textures.push_back(loadTexture(state->renderer, imagePath));
             }

@@ -13,7 +13,7 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
 
     XMLDocument doc;
     doc.LoadFile(path.c_str());
-    XMLElement* mapDoc = doc.FirstChildElement("Map");
+    XMLElement* mapDoc = doc.FirstChildElement("map");
     if (mapDoc != nullptr)
     {
         map = new tmx::Map();
@@ -22,7 +22,9 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
         map->tileWidth = mapDoc->IntAttribute("tilewidth");
         map->tileHeight = mapDoc->IntAttribute("tileheight");
 
-        for (XMLElement* child = mapDoc->FirstChildElement(); child != nullptr; child = child->NextSiblingElement())
+        for (XMLElement* child = mapDoc->FirstChildElement();
+             child != nullptr;
+             child = child->NextSiblingElement())
         {
             if (strcmp(child->Name(), "tileset") == 0)
             {
@@ -42,8 +44,9 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
                     int columns = ts->IntAttribute("columns");
                     tmx::TileSet newTileSet(firstgid, count, tileWidth, tileHeight, columns);
 
-                    for (XMLElement* tile = ts->FirstChildElement("tile"); tile != nullptr; tile = ts->
-                         NextSiblingElement("tile"))
+                    for (XMLElement* tile = ts->FirstChildElement("tile");
+                         tile != nullptr;
+                         tile = tile->NextSiblingElement("tile"))
                     {
                         tmx::Tile newTile;
                         newTile.id = tile->IntAttribute("id");
@@ -57,6 +60,7 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
                         }
                         newTileSet.tiles.push_back(std::move(newTile));
                     }
+                    assert(newTileSet.count == newTileSet.tiles.size());
 
                     map->tileSets.push_back(std::move(newTileSet));
                 }
@@ -88,8 +92,9 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
                 layer.name = child->Attribute("name");
                 layer.id = child->IntAttribute("id");
 
-                for (XMLElement* elem = child->FirstChildElement("object"); elem != nullptr; elem = elem->
-                     NextSiblingElement())
+                for (XMLElement* elem = child->FirstChildElement("object");
+                     elem != nullptr;
+                     elem = elem->NextSiblingElement())
                 {
                     tmx::LayerObject obj;
                     obj.id = elem->IntAttribute("id");
