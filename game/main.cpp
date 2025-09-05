@@ -62,13 +62,13 @@ struct GameState
     float bg2Scroll{}, bg3Scroll{}, bg4Scroll{};
     bool debugMode{};
 
-    GameState() : GameState(640, 480)
+    GameState() : GameState(640, 480, 480)
     {
     }
 
-    explicit GameState(const float viewPortWidth, const float viewPortHeight)
+    explicit GameState(const float viewPortWidth, const float viewPortHeight, const float mapHeight)
     {
-        mapViewport = {0, viewPortHeight, viewPortWidth, viewPortHeight};
+        mapViewport = {0, mapHeight - viewPortHeight, viewPortWidth, viewPortHeight};
     }
 
     GameObject& player() { return layers[playerLayer][playerIndex]; }
@@ -255,7 +255,8 @@ struct Resources
         enemy_die = loadAudio(state->mixer, "data/audio/monster_die.wav", 0);
         shoot = loadAudio(state->mixer, "data/audio/shoot.wav", 0);
 
-        map = tmx::loadMap("data/maps/smallmap.tmx");
+        // map = tmx::loadMap("data/maps/smallmap.tmx");
+        map = tmx::loadMap("data/maps/bigmap.tmx");
         if (!map)
         {
             throw std::runtime_error("Error loading map.");
@@ -384,7 +385,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     }
 
     auto* gs = &as->gameState;
-    *gs = GameState(ss->logW, ss->logH);
+    *gs = GameState(ss->logW, ss->logH, res->map->mapHeight * res->map->tileHeight);
     createTiles(ss, gs, res);
 
     // force double buffer allocate memory
@@ -510,6 +511,9 @@ SDL_AppResult SDL_AppIterate(void* appstate)
         SDL_RenderDebugText(ss->renderer, 5, 25,
                             std::format("Vel: {}", gs->player().velocity).c_str()
         );
+        SDL_RenderDebugText(ss->renderer, 5, 35,
+                            std::format("View: {}", gs->mapViewport).c_str()
+        );
     }
 
     SDL_RenderPresent(ss->renderer);
@@ -527,12 +531,13 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 void drawObject(const SDLState* state, const GameState* gs, GameObject& obj, const float width, const float height,
                 const float deltaTime)
 {
-    // if currentAnimation == -1, draw the specific frame index spriteFrame
-    const float srcX = obj.currentAnimation >= 0
-                           ? obj.animations[obj.currentAnimation].currentFrame() * width
-                           : (obj.spriteFrame - 1) * width;
+    SDL_FRect src{.x = 0, .y = 0, .w = width, .h = height};
 
-    const SDL_FRect src{.x = srcX, .y = 0, .w = width, .h = height};
+    // if currentAnimation == -1, draw the specific frame index spriteFrame
+    src.x = obj.currentAnimation >= 0
+                ? obj.animations[obj.currentAnimation].currentFrame() * width
+                : (obj.spriteFrame - 1) * width;
+
     const SDL_FRect dst{
         .x = obj.position.x - gs->mapViewport.x, .y = obj.position.y - gs->mapViewport.y, .w = width, .h = height
     };
@@ -566,7 +571,7 @@ void drawObject(const SDLState* state, const GameState* gs, GameObject& obj, con
         // collision
         const SDL_FRect rectA = {
             obj.position.x + obj.collider.x - gs->mapViewport.x,
-            obj.position.y + obj.collider.y,
+            obj.position.y + obj.collider.y - gs->mapViewport.y,
             obj.collider.w,
             obj.collider.h,
         };
@@ -576,7 +581,7 @@ void drawObject(const SDLState* state, const GameState* gs, GameObject& obj, con
         // ground sensor
         const SDL_FRect ground_sensor{
             .x = obj.position.x + obj.collider.x - gs->mapViewport.x,
-            .y = obj.position.y + obj.collider.y + obj.collider.h,
+            .y = obj.position.y + obj.collider.y + obj.collider.h - gs->mapViewport.y,
             .w = obj.collider.w, .h = 1
         };
         SDL_SetRenderDrawColor(state->renderer, 0, 0, 255, 150);
