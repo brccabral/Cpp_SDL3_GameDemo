@@ -12,7 +12,8 @@ Original tutorial from [constref](https://www.youtube.com/watch?v=Wu2g-N5Z78Y)
 ## SDL3
 
 Get it here [SDL](https://github.com/libsdl-org/SDL)  
-Also [SDL_image](https://github.com/libsdl-org/SDL_image)
+Also [SDL_image](https://github.com/libsdl-org/SDL_image)  
+And [SDL_mixer](https://github.com/libsdl-org/SDL_mixer)
 
 ## AutoRelease
 
