@@ -257,7 +257,8 @@ struct Resources
         shoot = loadAudio(state->mixer, "data/audio/shoot.wav", 0);
 
         // map = tmx::loadMap("data/maps/smallmap.tmx");
-        map = tmx::loadMap("data/maps/bigmap.tmx");
+        // map = tmx::loadMap("data/maps/bigmap.tmx");
+        map = tmx::loadMap("data/maps/original.tmx");
         if (!map)
         {
             throw std::runtime_error("Error loading map.");
@@ -1000,7 +1001,9 @@ void collisionResponse(const Resources* res, const SDL_FRect& rectB, GameObject&
             // bounce player if collides with enemy
             if (a.data.enemy.state != EnemyState::dead)
             {
-                b.velocity = glm::vec2(100, 0) * -b.direction;
+                const int ax = a.position.x + a.collider.x + a.collider.w / 2;
+                const int bx = b.position.x + b.collider.x + b.collider.w / 2;
+                b.velocity = glm::vec2(100, 0) * (ax > bx ? -1.0f : 1.0f);
             }
         }
     }
