@@ -7,6 +7,7 @@ class Animation
     int frameCount{};
 
 public:
+
     Animation() = default;
 
     Animation(const int frameCount, const float length) : timer(length), frameCount(frameCount)

@@ -7,6 +7,7 @@ class Timer
     bool timeout{};
 
 public:
+
     explicit Timer(float length);
 
     // returns true if timer has completed
