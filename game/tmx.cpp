@@ -1,5 +1,6 @@
 #include "tmx.hpp"
 
+#include <cassert>
 #include <filesystem>
 #include <sstream>
 #include <tinyxml2.h>
@@ -12,7 +13,7 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
     tmx::Map* map = nullptr;
 
     XMLDocument doc;
-    doc.LoadFile(path.c_str());
+    doc.LoadFile(path.string().c_str());
     XMLElement* mapDoc = doc.FirstChildElement("map");
     if (mapDoc != nullptr)
     {
@@ -33,7 +34,7 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
                 // load tileset XML
                 XMLDocument tilesetDoc;
                 auto sourcePath = path.parent_path().append(child->Attribute("source"));
-                tilesetDoc.LoadFile(sourcePath.c_str());
+                tilesetDoc.LoadFile(sourcePath.string().c_str());
 
                 XMLElement* ts = tilesetDoc.FirstChildElement("tileset");
                 if (ts != nullptr)
