@@ -10,14 +10,13 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
     using namespace tinyxml2;
     std::filesystem::path path(filename.c_str());
 
-    tmx::Map* map = nullptr;
+    auto map = std::make_unique<tmx::Map>();
 
     XMLDocument doc;
     doc.LoadFile(path.string().c_str());
     XMLElement* mapDoc = doc.FirstChildElement("map");
     if (mapDoc != nullptr)
     {
-        map = new tmx::Map();
         map->mapWidth = mapDoc->IntAttribute("width");
         map->mapHeight = mapDoc->IntAttribute("height");
         map->tileWidth = mapDoc->IntAttribute("tilewidth");
@@ -122,5 +121,5 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
         }
     }
 
-    return std::unique_ptr<tmx::Map>(map);
+    return map;
 }
