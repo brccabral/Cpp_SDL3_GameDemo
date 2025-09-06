@@ -46,7 +46,7 @@ namespace tmx
         int count{}, tileWidth{}, tileHeight{}, columns{}, firstgid{};
         std::vector<Tile> tiles{};
 
-        TileSet(int firstgid, int count, int tileWidth, int tileHeight, int columns)
+        TileSet(const int firstgid, const int count, const int tileWidth, const int tileHeight, const int columns)
             : count(count), tileWidth(tileWidth), tileHeight(tileHeight), columns(columns), firstgid(firstgid)
         {
         }
