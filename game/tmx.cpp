@@ -84,7 +84,7 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
                     }
                 }
 
-                map->layers.push_back(std::move(layer));
+                map->layers.emplace_back(std::move(layer));
             }
             else if (strcmp(child->Name(), "objectgroup") == 0)
             {
@@ -116,7 +116,7 @@ std::unique_ptr<tmx::Map> tmx::loadMap(const std::string& filename)
                     layer.objects.push_back(std::move(obj));
                 }
 
-                map->layers.push_back(std::move(layer));
+                map->layers.emplace_back(std::move(layer));
             }
         }
     }
