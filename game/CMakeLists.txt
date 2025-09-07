@@ -33,3 +33,17 @@ add_custom_target(copy_data
                   DEPENDS "${DATA_DEST_DIR}/.touch"
 )
 add_dependencies(sdl3-demo copy_data)
+
+if (EMSCRIPTEN)
+    # Option 1 - embed-file with every single file
+    foreach (res IN LISTS DATA_FILES)
+        get_filename_component(res_name "${res}" NAME)
+        get_filename_component(res_dir "${res}" DIRECTORY)
+        string(REPLACE ${CMAKE_CURRENT_SOURCE_DIR}/ "" RELPATH ${res_dir})
+        target_link_options(sdl3-demo PRIVATE "SHELL:--embed-file \"${res}@${RELPATH}/${res_name}\"")
+    endforeach ()
+    # Option 2 - preload-file - concatenate all files into a single Blob
+    #    target_link_options(sdl3-demo PRIVATE --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data@data")
+    set_property(TARGET sdl3-demo PROPERTY SUFFIX ".html")
+    target_link_options(sdl3-demo PRIVATE -sALLOW_MEMORY_GROWTH=1)
+endif ()

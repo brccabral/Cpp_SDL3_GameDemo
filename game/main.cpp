@@ -1220,5 +1220,9 @@ void drawParallaxBackground(
             static_cast<float>(texture->h)
     };
 
+#if EMSCRIPTEN
+    SDL_RenderTexture(renderer, texture, nullptr, &dst);
+#else
     SDL_RenderTextureTiled(renderer, texture, nullptr, 1, &dst);
+#endif
 }
