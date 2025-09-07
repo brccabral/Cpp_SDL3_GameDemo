@@ -1,6 +1,12 @@
-add_executable(sdl3-demo)
-target_compile_features(sdl3-demo PRIVATE cxx_std_23)
-target_sources(sdl3-demo
+if (EMSCRIPTEN)
+    set(EXE index)
+else ()
+    set(EXE sdl3-demo)
+endif ()
+
+add_executable(${EXE})
+target_compile_features(${EXE} PRIVATE cxx_std_23)
+target_sources(${EXE}
                PRIVATE
                main.cpp
                timer.cpp
@@ -8,7 +14,7 @@ target_sources(sdl3-demo
                gameobject.cpp
                tmx.cpp
 )
-target_link_libraries(sdl3-demo PRIVATE
+target_link_libraries(${EXE} PRIVATE
                       autorelease::autorelease
                       SDL3::SDL3
                       SDL3_image::SDL3_image
@@ -32,7 +38,7 @@ add_custom_command(OUTPUT "${DATA_DEST_DIR}/.touch"
 add_custom_target(copy_data
                   DEPENDS "${DATA_DEST_DIR}/.touch"
 )
-add_dependencies(sdl3-demo copy_data)
+add_dependencies(${EXE} copy_data)
 
 if (EMSCRIPTEN)
     # Option 1 - embed-file with every single file
@@ -40,11 +46,11 @@ if (EMSCRIPTEN)
         get_filename_component(res_name "${res}" NAME)
         get_filename_component(res_dir "${res}" DIRECTORY)
         string(REPLACE ${CMAKE_CURRENT_SOURCE_DIR}/ "" RELPATH ${res_dir})
-        target_link_options(sdl3-demo PRIVATE "SHELL:--embed-file \"${res}@${RELPATH}/${res_name}\"")
+        target_link_options(${EXE} PRIVATE "SHELL:--embed-file \"${res}@${RELPATH}/${res_name}\"")
     endforeach ()
     # Option 2 - preload-file - concatenate all files into a single Blob
-    #    target_link_options(sdl3-demo PRIVATE --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data@data")
-    set_property(TARGET sdl3-demo PROPERTY SUFFIX ".html")
-    target_link_options(sdl3-demo PRIVATE -sALLOW_MEMORY_GROWTH=1)
-    target_link_options(sdl3-demo PRIVATE --shell-file "${PROJECT_SOURCE_DIR}/emscripten/shell.html")
+    #    target_link_options(${EXE} PRIVATE --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data@data")
+    set_property(TARGET ${EXE} PROPERTY SUFFIX ".html")
+    target_link_options(${EXE} PRIVATE -sALLOW_MEMORY_GROWTH=1)
+    target_link_options(${EXE} PRIVATE --shell-file "${PROJECT_SOURCE_DIR}/emscripten/shell.html")
 endif ()

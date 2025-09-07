@@ -329,7 +329,7 @@ void drawParallaxBackground(
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
-    if (!SDL_SetAppMetadata("SDL3 Game Demo", "1.0", "com.brunorcabral.sdl3gamedemo"))
+    if (!SDL_SetAppMetadata("Platformer Shooter", "1.0", "com.brunorcabral.platformer-shooter"))
     {
         return SDL_APP_FAILURE;
     }
@@ -361,7 +361,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     ss->width = 1600;
     ss->height = 900;
     ss->window = {
-            SDL_CreateWindow("SDL3 Game Demo", ss->width, ss->height, SDL_WINDOW_RESIZABLE),
+            SDL_CreateWindow("Platformer Shooter", ss->width, ss->height, SDL_WINDOW_RESIZABLE),
             SDL_DestroyWindow
     };
     if (!ss->window)
